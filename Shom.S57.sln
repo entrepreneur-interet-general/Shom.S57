@@ -9,12 +9,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shom.s57", "Shom.S57\Shom.s
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9A27FF90-638C-4A21-974B-9359883AE561}"
 	ProjectSection(SolutionItems) = preProject
-		CONTRIBUTING.txt = CONTRIBUTING.txt
+		CONTRIBUTING.md = CONTRIBUTING.md
 		LICENSE.md = LICENSE.md
 		README.md = README.md
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shom.S57.Tests", "Shom.S57.Tests\Shom.S57.Tests.csproj", "{D84DD2FB-DC54-40C1-83EA-C5BA521187F8}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Shom.GeoUtilities", "Shom.GeoUtilities\Shom.GeoUtilities.csproj", "{43F57C4F-C980-4178-9386-5780FFF8B9B8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -34,6 +36,10 @@ Global
 		{D84DD2FB-DC54-40C1-83EA-C5BA521187F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D84DD2FB-DC54-40C1-83EA-C5BA521187F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D84DD2FB-DC54-40C1-83EA-C5BA521187F8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{43F57C4F-C980-4178-9386-5780FFF8B9B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{43F57C4F-C980-4178-9386-5780FFF8B9B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{43F57C4F-C980-4178-9386-5780FFF8B9B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{43F57C4F-C980-4178-9386-5780FFF8B9B8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
