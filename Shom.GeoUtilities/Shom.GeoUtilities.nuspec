@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Shom.GeoUtilities</id>
+    <version>0.0.1-alpha</version>
+    <title>Shom.GeoUtilities</title>
+    <authors>Shom, Arnaud Ménard</authors>
+    <owners>Shom</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Geographic Utilities</description>
+    <copyright>Copyright 2018 Shom, Arnaud Ménard</copyright>
+    <tags>Geo Tiles Conversions</tags>
+  </metadata>
+  <files>
+      <file src="bin\Release\netstandard2.0\Shom.GeoUtilities.dll" target="lib\netstandard2.0\Shom.GeoUtilities.dll" />
+  </files>
+</package>

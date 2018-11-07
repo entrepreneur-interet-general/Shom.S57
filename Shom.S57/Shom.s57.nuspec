@@ -7,7 +7,7 @@
     <authors>Shom</authors>
     <owners>Shom</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>S57 Reader. Reads any s57 .0xx, files.</description>
+    <description>S57 Reader. Reads any s57 files such as IHO ENCs.</description>
     <releaseNotes></releaseNotes>
     <copyright>Copyright 2018 Shom, Arnaud Ménard</copyright>
     <tags>S57</tags>
