@@ -107,70 +107,126 @@ namespace S57
 
         public Geometry GetGeometry()
         {
+            VectorRecordPointer PreviousStartNode = new VectorRecordPointer();
+            VectorRecordPointer PreviousEndNode = new VectorRecordPointer();
             switch (Primitive)
             {
                 case GeometricPrimitive.Point:
-                {
-                    if (VectorPtrs[0] == null || VectorPtrs[0].Vector == null) return null;
-                    return VectorPtrs[0].Vector.Geometry;
-                }
-                case GeometricPrimitive.Line:
-                {
-                    Line line = new Line();
-                    foreach (var vectorPtr in VectorPtrs)
                     {
-                        var vector = vectorPtr.Vector;
-                        if( vectorPtr.Mask == Masking.Show || 
-                            vectorPtr.Mask == Masking.NotRelevant )
-                        {
-                            if (vector != null)
-                            {
-                                var l = vector.Geometry as Line;
-                                if( vectorPtr.Orientation == Orientation.Reverse )
-                                {
-                                    var reversedList = new List<Point>(l.points);
-                                    reversedList.Reverse();
-                                    line.points.AddRange(reversedList);
-                                }
-                                else
-                                {
-                                    line.points.AddRange(l.points);
-                                }
-                            }
-                        }
+                        if (VectorPtrs[0] == null || VectorPtrs[0].Vector == null) return null;
+                        return VectorPtrs[0].Vector.Geometry;
                     }
-                    return line;
-                }
-                case GeometricPrimitive.Area:
-                {
-                    Area area = new Area();
-                    foreach (var vectorPtr in VectorPtrs)
+                case GeometricPrimitive.Line:
                     {
-                        if( ( vectorPtr.Mask == Masking.Show || vectorPtr.Mask == Masking.NotRelevant ) &&
-                            ( vectorPtr.Usage == Usage.ExteriorBoundaries || vectorPtr.Usage == Usage.ExteriorBoundaryTruncatedByDataLimit ) )
+                        Line line = new Line();
+                        foreach (var vectorPtr in VectorPtrs)
                         {
-                            var vector = vectorPtr.Vector;
-                            if (vector != null)
+                            VectorRecordPointer CurrentStartNode = new VectorRecordPointer();
+                            VectorRecordPointer CurrentEndNode = new VectorRecordPointer();
+                            if (vectorPtr.Mask == Masking.Show || vectorPtr.Mask == Masking.NotRelevant)
                             {
+                                var vector = vectorPtr.Vector;
                                 if (vector != null)
                                 {
                                     var l = vector.Geometry as Line;
                                     if (vectorPtr.Orientation == Orientation.Reverse)
-                                    {
+                                    {   //ensure connected nodes between edges are not doublicated (is prohibited), 
+                                        //and while doing so check if connected egdes are truely connecting previous and current edge
+                                        if (vectorPtr.Vector.VectorRecordPointers[1].Name.RecordName == VectorType.connectedNode)
+                                            CurrentStartNode = vectorPtr.Vector.VectorRecordPointers[1];
+                                        if (vectorPtr.Vector.VectorRecordPointers[0].Name.RecordName == VectorType.connectedNode)
+                                            CurrentEndNode = vectorPtr.Vector.VectorRecordPointers[0];
                                         var reversedList = new List<Point>(l.points);
                                         reversedList.Reverse();
-                                        area.points.AddRange(reversedList);
+                                        if (line.points.Count() > 0)
+                                        {
+                                            if (PreviousEndNode.Vector.Geometry as Point == CurrentStartNode.Vector.Geometry as Point)
+                                                line.points.AddRange(reversedList.Skip(1));
+                                            else
+                                                line.points.AddRange(reversedList);
+                                        }
+                                        else
+                                            line.points.AddRange(reversedList);
                                     }
                                     else
                                     {
-                                        area.points.AddRange(l.points);
+                                        if (vectorPtr.Vector.VectorRecordPointers[0].Name.RecordName == VectorType.connectedNode)
+                                            CurrentStartNode = vectorPtr.Vector.VectorRecordPointers[0];
+                                        if (vectorPtr.Vector.VectorRecordPointers[1].Name.RecordName == VectorType.connectedNode)
+                                            CurrentEndNode = vectorPtr.Vector.VectorRecordPointers[1];
+                                        if (line.points.Count() > 0)
+                                        {
+                                            if (PreviousEndNode.Vector.Geometry as Point == CurrentStartNode.Vector.Geometry as Point)
+                                                line.points.AddRange(l.points.Skip(1));
+                                            else
+                                                line.points.AddRange(l.points);
+                                        }
+                                        else
+                                            line.points.AddRange(l.points);
                                     }
                                 }
                             }
+                            PreviousStartNode = CurrentStartNode;
+                            PreviousEndNode = CurrentEndNode;
                         }
+                        return line;
                     }
-                    return area;
-                }
+                case GeometricPrimitive.Area:
+                    {
+                        Area area = new Area();
+                        foreach (var vectorPtr in VectorPtrs)
+                        {
+                            VectorRecordPointer CurrentStartNode = new VectorRecordPointer();
+                            VectorRecordPointer CurrentEndNode = new VectorRecordPointer();
+                            if ((vectorPtr.Mask == Masking.Show || vectorPtr.Mask == Masking.NotRelevant) &&
+                               ( vectorPtr.Usage == Usage.ExteriorBoundaries || vectorPtr.Usage == Usage.ExteriorBoundaryTruncatedByDataLimit ))
+                            {
+                                var vector = vectorPtr.Vector;
+                                if (vector != null)
+                                {
+                                    var l = vector.Geometry as Line;
+                                    if (vectorPtr.Orientation == Orientation.Reverse)
+                                    {   //ensure connected nodes between edges are not doublicated when appending previous edge (S57 spec 3.1 prohibts dublication of geometry), 
+                                        //and while doing so check if connected egdes are truely connecting previous and current edge (perhaps redundant...)
+                                        if (vectorPtr.Vector.VectorRecordPointers[1].Name.RecordName == VectorType.connectedNode)
+                                            CurrentStartNode = vectorPtr.Vector.VectorRecordPointers[1];
+                                        if (vectorPtr.Vector.VectorRecordPointers[0].Name.RecordName == VectorType.connectedNode)
+                                            CurrentEndNode = vectorPtr.Vector.VectorRecordPointers[0];
+                                        var reversedList = new List<Point>(l.points);
+                                        reversedList.Reverse();
+                                        if (area.points.Count() > 0)
+                                        {
+                                            if (PreviousEndNode.Vector.Geometry as Point == CurrentStartNode.Vector.Geometry as Point)
+                                                area.points.AddRange(reversedList.Skip(1));
+                                            else
+                                                area.points.AddRange(reversedList);
+                                        }
+                                        else
+                                            area.points.AddRange(reversedList);
+                                    }
+                                    else
+                                    {
+                                        if (vectorPtr.Vector.VectorRecordPointers[0].Name.RecordName == VectorType.connectedNode)
+                                            CurrentStartNode = vectorPtr.Vector.VectorRecordPointers[0];
+                                        if (vectorPtr.Vector.VectorRecordPointers[1].Name.RecordName == VectorType.connectedNode)
+                                            CurrentEndNode = vectorPtr.Vector.VectorRecordPointers[1];
+                                        if (area.points.Count() > 0)
+                                        {
+                                            if (PreviousEndNode.Vector.Geometry as Point == CurrentStartNode.Vector.Geometry as Point)
+                                                area.points.AddRange(l.points.Skip(1));
+                                            else
+                                                area.points.AddRange(l.points);
+                                        }
+                                        else
+                                            area.points.AddRange(l.points);
+                                    }
+                                }
+                            }
+                            PreviousStartNode = CurrentStartNode;
+                            PreviousEndNode = CurrentEndNode;
+                        }
+                        return area;
+                    }
             }
             return null;
         }
@@ -645,6 +701,6 @@ namespace S57
         {
             get { return Code == S57Objects.C_AGGR; }
         }
-        */
+        */        
     }
 }
