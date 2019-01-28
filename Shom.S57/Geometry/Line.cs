@@ -8,5 +8,9 @@ namespace S57
     public class Line : Geometry
     {
         public List<Point> points = new List<Point>();
+        //public void Reverse()
+        //{
+        //    this.points.Reverse();
+        //}
     }
 }

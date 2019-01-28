@@ -42,6 +42,7 @@
     <Compile Include="Enums\GenericPrimitive.cs" />
     <Compile Include="Geometry\Geometry.cs" />
     <Compile Include="Enums\VectorDataStructure.cs" />
+    <Compile Include="Geometry\Polygonset.cs" />
     <Compile Include="SoundingData.cs" />
     <Compile Include="VectorName.cs" />
     <Compile Include="Geometry\Line.cs" />

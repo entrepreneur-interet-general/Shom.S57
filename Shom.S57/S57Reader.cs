@@ -220,7 +220,7 @@ namespace S57
                         BindVectorToVectorRecordPointsOf(vector);
                     }
                     // LAT/LONG UPDATE
-                    if (vector.Geometry is Point)
+                    if (vector.Geometry is Point) //assemble all points for a given vector record, checks if geometry return type is point or line
                     {
                         ((Point)vector.Geometry).X /= baseFile.coordinateMultiplicationFactor;
                         ((Point)vector.Geometry).Y /= baseFile.coordinateMultiplicationFactor;
