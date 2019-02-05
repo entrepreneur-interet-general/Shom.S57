@@ -593,7 +593,10 @@ namespace S57
             var length = bytes.Count() - 1;
             int currentIndex = 0;
             var soundingDatas = new List<SoundingData>();
-            while (currentIndex < length && bytes[currentIndex] != DataField.UnitTerminator)
+            //to stop at DataField.UnitTerminator while reading coordinates is a bug: "31" can occur like any other byte to encode the XCOO or YCOO coordinates 
+            //e.g. it is the first byte of latitude 34.6188063 (31+26880+10616832+335544320)
+            //while (currentIndex < length && bytes[currentIndex] != DataField.UnitTerminator) //this is a bug: unit terminator causes premature termination
+            while (currentIndex < length)
             {
                 var soundingData = new SoundingData();
                 for (int i = 0; i < 4; i++)

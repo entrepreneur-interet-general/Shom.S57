@@ -18,13 +18,16 @@ namespace Shom.ISO8211
 
         public RecordLeader(byte[] bytes)
         {
-            var sbRecordLength = new StringBuilder();
+            var sb = new StringBuilder();
+            //var sbRecordLength = new StringBuilder();
             for (int i = 0; i < 5; i++)
             {
-                sbRecordLength.Append((char) bytes[i]);
+                //sbRecordLength.Append((char) bytes[i]);
+                sb.Append((char)bytes[i]);
             }
 
-            RecordLength = Int32.Parse(sbRecordLength.ToString());
+            //RecordLength = Int32.Parse(sbRecordLength.ToString());
+            RecordLength = Int32.Parse(sb.ToString());
 
             InterchangeLevel = (char) bytes[5];
             LeaderIdentifier = (char) bytes[6];
@@ -46,12 +49,15 @@ namespace Shom.ISO8211
                 FieldControlLength = Int32.Parse(new string(fieldControlLengthChars));
             }
 
-            var sbBaseAddress = new StringBuilder();
+            sb.Clear();
+            //var sbBaseAddress = new StringBuilder();
             for (int i = 12; i < 17; i++)
             {
-                sbBaseAddress.Append((char) bytes[i]);
+                //sbBaseAddress.Append((char) bytes[i]);
+                sb.Append((char)bytes[i]);
             }
-            BaseAddressOfFieldArea = Int32.Parse(sbBaseAddress.ToString());
+            //BaseAddressOfFieldArea = Int32.Parse(sbBaseAddress.ToString());
+            BaseAddressOfFieldArea = Int32.Parse(sb.ToString());
 
             ExtendedCharacterSetIndicator = new[] {(char) bytes[17], (char) bytes[18], (char) bytes[19]};
 

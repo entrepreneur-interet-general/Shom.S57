@@ -204,10 +204,13 @@ namespace S57
                 var sg3d = vr.Fields.GetFieldByTag("SG3D");
                 if (sg3d != null)
                 {
+                    //does this make sense here? Are there 3D points where only 2D is of interest? Alternative proposal: 
+                    //put entire method "ExtractSoundings()" here, store List under new Vector member variable "private List<SoundingData> soundingMultipoint"  
+                    //would make MultiPoint directly accessible under the respective Soundingfeature without need to call additional method.
                     var ycoo = sg3d.GetDouble("YCOO");
                     var xcoo = sg3d.GetDouble("XCOO");
                     geometry = new Point(xcoo, ycoo);
-                    //Debug.WriteLine($"{ycoo:0.0#####}");
+                                                       //Debug.WriteLine($"{ycoo:0.0#####}");  
                 }
                 else
                 {
