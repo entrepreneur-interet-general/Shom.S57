@@ -1,19 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
-    <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{446B6DC3-EF7B-4682-9F21-ED76CEBCA62A}</ProjectGuid>
+    <ProjectGuid>{BAB6705F-05F3-4707-BCE4-330FF06E66C0}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>S57</RootNamespace>
-    <AssemblyName>S57</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <TargetFrameworkProfile>Profile4</TargetFrameworkProfile>
+    <RootNamespace>Shom.S57</RootNamespace>
+    <AssemblyName>Shom.S57</AssemblyName>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <ProjectTypeGuids>{786C830F-07A1-408B-BD7F-6EE04809D6DB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <Deterministic>true</Deterministic>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -33,58 +31,60 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Agency.cs" />
     <Compile Include="BoundingBox.cs" />
-    <Compile Include="Enums\CoordinateUnits.cs" />
-    <Compile Include="Enums\SHOM\Organisme.cs" />
-    <Compile Include="Geometry\Area.cs" />
+    <Compile Include="Cell.cs" />
+    <Compile Include="Datum.cs" />
     <Compile Include="Enums\Boundary.cs" />
-    <Compile Include="FeatureRecordPointer.cs" />
+    <Compile Include="Enums\CoordinateUnits.cs" />
     <Compile Include="Enums\GenericPrimitive.cs" />
-    <Compile Include="Geometry\Geometry.cs" />
-    <Compile Include="Enums\VectorDataStructure.cs" />
-    <Compile Include="Geometry\Polygonset.cs" />
-    <Compile Include="SoundingData.cs" />
-    <Compile Include="VectorName.cs" />
-    <Compile Include="Geometry\Line.cs" />
     <Compile Include="Enums\Masking.cs" />
     <Compile Include="Enums\Orientation.cs" />
-    <Compile Include="Geometry\Point.cs" />
     <Compile Include="Enums\RecordUpdate.cs" />
     <Compile Include="Enums\Relationship.cs" />
-    <Compile Include="S57Attribute.cs" />
-    <Compile Include="Feature.cs" />
-    <Compile Include="File\BaseFile.cs" />
-    <Compile Include="Cell.cs" />
-    <Compile Include="File\UpdateFile.cs" />
-    <Compile Include="LongName.cs" />
-    <Compile Include="Name.cs" />
-    <Compile Include="S57Object.cs" />
-    <Compile Include="Agency.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RecordName.cs" />
-    <Compile Include="S57Reader.cs" />
+    <Compile Include="Enums\SHOM\Organisme.cs" />
     <Compile Include="Enums\TopologyIndicator.cs" />
     <Compile Include="Enums\Usage.cs" />
-    <Compile Include="Vector.cs" />
-    <Compile Include="Datum.cs" />
-    <Compile Include="VectorRecordPointer.cs" />
+    <Compile Include="Enums\VectorDataStructure.cs" />
     <Compile Include="Enums\VectorType.cs" />
+    <Compile Include="Feature.cs" />
+    <Compile Include="FeatureRecordPointer.cs" />
+    <Compile Include="File\BaseFile.cs" />
+    <Compile Include="File\CatalogueFile.cs" />
+    <Compile Include="File\UpdateFile.cs" />
+    <Compile Include="Geometry\Area.cs" />
+    <Compile Include="Geometry\Geometry.cs" />
+    <Compile Include="Geometry\Line.cs" />
+    <Compile Include="Geometry\Point.cs" />
+    <Compile Include="Geometry\Polygonset.cs" />
+    <Compile Include="LongName.cs" />
+    <Compile Include="Name.cs" />
+    <Compile Include="ObjectClassInfo.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RecordName.cs" />
+    <Compile Include="S57Attribute.cs" />
+    <Compile Include="S57Object.cs" />
+    <Compile Include="S57Reader.cs" />
+    <Compile Include="SoundingData.cs" />
+    <Compile Include="Vector.cs" />
+    <Compile Include="VectorName.cs" />
+    <Compile Include="VectorRecordPointer.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Unused\" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Shom.ISO8211\Shom.Iso8211.csproj">
-      <Project>{4c239c1d-04ea-44d9-9037-216a018f827b}</Project>
-      <Name>Shom.Iso8211</Name>
+    <ProjectReference Include="..\Shom.ISO8211\Shom.ISO8211.csproj">
+      <Project>{0a1b575b-cfa2-4e4b-9439-85c63377e0c7}</Project>
+      <Name>Shom.ISO8211</Name>
     </ProjectReference>
   </ItemGroup>
-  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -18,6 +18,7 @@ namespace S57
         public List<Cell> cells = new List<Cell>();
         public Cell cell;
         public BaseFile baseFile;
+        public CatalogueFile catalogueFile;
 
         public Dictionary<string, Feature> Features = new Dictionary<string, Feature>();
         public Dictionary<string, Vector> Vectors = new Dictionary<string, Vector>();
@@ -97,6 +98,15 @@ namespace S57
         public void NewMap()
         {
             mapIndex++;
+        }
+
+        public void ReadCatalogue(System.IO.Stream stream)
+        {
+            newFeatures.Clear();
+            using (var reader = new Iso8211Reader(stream))
+            {
+                catalogueFile = new CatalogueFile(reader);
+            }
         }
 
         public void Read(System.IO.Stream stream)

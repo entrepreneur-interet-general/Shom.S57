@@ -34,8 +34,8 @@ namespace Shom.ISO8211
                 {
                     throw new Exception("Did not expect an ArrayDescriptor for a SingleItem DataStructureCode");
                 }
-
-                SubFieldDefinitions.Add(new SubFieldDefinition("", formatControls));
+                //Single item should imply there are no subfileds, so why try?
+                //SubFieldDefinitions.Add(new SubFieldDefinition("", formatControls)); 
             }
             else
             {

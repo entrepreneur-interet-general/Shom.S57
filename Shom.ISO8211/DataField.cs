@@ -94,9 +94,39 @@ namespace Shom.ISO8211
                 }
                 else if (subFieldDefinition.FormatTypeCode == FormatTypeCode.ExplicitPoint)
                 {
+                    var tempSb = new StringBuilder();
                     if (subFieldDefinition.SubFieldWidth == 0)
                     {
-                        throw new Exception("Expected a subfield width for Explicit Point Type");
+                        //throw new Exception("Expected a subfield width for Explicit Point Type");
+                        //no need to throw exception, open ended floating point values (terminated by Unit terminator) are permitted, 
+                        //see S57 specification (3.1 Main, section 7.4.1)
+                        while (_bytes[currentIndex] != UnitTerminator)
+                        {
+                            tempSb.Append((char)_bytes[currentIndex]);
+                            currentIndex++;
+                        }
+                        //Consume the Terminator
+                        currentIndex++;
+                    }
+                    else
+                    {
+                        for (int i = 0; i < subFieldDefinition.SubFieldWidth; i++)
+                        {
+                            tempSb.Append((char)_bytes[currentIndex]);
+                            currentIndex++;
+                        }
+                    }
+                    double value = 0;
+                    //value = Double.Parse(tempSb.ToString(), CultureInfo.InvariantCulture);
+                    //Double.Parse(tempSb.ToString(), CultureInfo.InvariantCulture);
+                    Double.TryParse(tempSb.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out value);
+                    SubFields.Add(subFieldDefinition.Tag, value);
+                }
+                else if (subFieldDefinition.FormatTypeCode == FormatTypeCode.ImplicitPoint) //added begin
+                {
+                    if (subFieldDefinition.SubFieldWidth == 0)
+                    {
+                        throw new Exception("Expected a subfield width for Implicit Point Type");
                     }
                     var tempSb = new StringBuilder();
                     for (int i = 0; i < subFieldDefinition.SubFieldWidth; i++)
@@ -104,10 +134,10 @@ namespace Shom.ISO8211
                         tempSb.Append((char)_bytes[currentIndex]);
                         currentIndex++;
                     }
-                    double value = 0;
-                    value = Double.Parse(tempSb.ToString(), CultureInfo.InvariantCulture);
+                    int value = 0;
+                    value = int.Parse(tempSb.ToString(), CultureInfo.InvariantCulture);
                     SubFields.Add(subFieldDefinition.Tag, value);
-                }
+                }//added end
                 else if (subFieldDefinition.FormatTypeCode == FormatTypeCode.BitStringData)
                 {
                     if (subFieldDefinition.SubFieldWidth == 0)

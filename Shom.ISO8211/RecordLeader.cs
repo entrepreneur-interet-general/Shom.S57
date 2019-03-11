@@ -59,7 +59,7 @@ namespace Shom.ISO8211
             //BaseAddressOfFieldArea = Int32.Parse(sbBaseAddress.ToString());
             BaseAddressOfFieldArea = Int32.Parse(sb.ToString());
 
-            ExtendedCharacterSetIndicator = new[] {(char) bytes[17], (char) bytes[18], (char) bytes[19]};
+            ExtendedCharacterSetIndicator = new[] {(char) bytes[17], (char) bytes[18], (char) bytes[19], '\0'}; //added \0
 
             var entryMapBytes = new byte[4];
             Array.Copy(bytes, 20, entryMapBytes, 0, 4);

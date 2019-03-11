@@ -22,6 +22,10 @@ namespace Shom.ISO8211
                     _formatTypeCode = FormatTypeCode.CharacterData;
                     ParseSubFieldWidthOctets(format);
                     break;
+                case 'I':                               //case I added
+                    _formatTypeCode = FormatTypeCode.ImplicitPoint;
+                    ParseSubFieldWidthOctets(format);
+                    break;
                 case 'R':
                     _formatTypeCode = FormatTypeCode.ExplicitPoint;
                     ParseSubFieldWidthOctets(format);

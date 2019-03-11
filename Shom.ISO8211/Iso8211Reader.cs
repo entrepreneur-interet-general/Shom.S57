@@ -9,6 +9,7 @@ namespace Shom.ISO8211
     {
         private const byte UnitTerminator = 0x1F;
         private const byte FieldTerminator = 0x1E;
+        const int sizeOfRecordLeader = 24;
 
         private readonly BinaryReader Reader;
 
@@ -25,7 +26,8 @@ namespace Shom.ISO8211
         private DataDescriptiveRecord ReadDataDescriptiveRecord()
         {
             var rec = new DataDescriptiveRecord();
-            rec.Leader = ReadRecordLeader();
+            byte[] readRecord = Reader.ReadBytes(sizeOfRecordLeader);
+            rec.Leader = ReadRecordLeader(readRecord);
             rec.Directory = ReadRecordDirectory(rec.Leader);
             if (rec.Leader.LeaderIdentifier != 'L')
             {
@@ -38,23 +40,27 @@ namespace Shom.ISO8211
 
         public DataRecord ReadDataRecord()
         {
-            if (Reader.BaseStream.Position >= Reader.BaseStream.Length)
-            {
-                return null;
-            }
+            //this does not work with stream having unknown lengths or position (e.g. opening file directly from ZIP archive)
+            //if (Reader.BaseStream.Position >= Reader.BaseStream.Length) 
+            //{
+            //    return null;
+            //}
 
             var rec = new DataRecord();
-            rec.Leader = ReadRecordLeader();
+            byte[] readRecord = Reader.ReadBytes(sizeOfRecordLeader);
+            if (readRecord.Length==0)  //detect  stream end when readbytes returns 0 works with stream of known length (e.g. files) and unknown length
+                return null;
+            else
+                rec.Leader = ReadRecordLeader(readRecord);
             rec.Directory = ReadRecordDirectory(rec.Leader);
             rec.Fields = ReadDataRecordFields(rec.Leader, rec.Directory);
 
             return rec;
         }
 
-        private RecordLeader ReadRecordLeader()
+        private RecordLeader ReadRecordLeader(byte[] readRecord)
         {
-            const int sizeOfRecordLeader = 24;
-            return new RecordLeader(Reader.ReadBytes(sizeOfRecordLeader));
+            return new RecordLeader(readRecord);
         }
 
         private RecordDirectory ReadRecordDirectory(RecordLeader leader)
