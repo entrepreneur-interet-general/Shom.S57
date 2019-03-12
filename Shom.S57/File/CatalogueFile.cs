@@ -15,8 +15,7 @@ namespace S57.File
             var nextRec = reader.ReadDataRecord();
             while (nextRec != null)
             {
-                //DataField field = nextRec.Fields.GetFieldByTag("CATD");
-                DataField field = nextRec.Fields.GetFieldByTag("FFPC");
+                DataField field = nextRec.Fields.GetFieldByTag("CATD");
                 if (field != null)
                 {
                     CatalogueRecords.Add(nextRec);

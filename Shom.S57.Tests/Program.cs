@@ -17,8 +17,8 @@ namespace Shom.S57.Tests
             //string path = args[0];
             var reader = new S57Reader();
             string ZipName = "NC_ENCs.zip";
-            //string MapName = "ENC_ROOT/CATALOG.031";
-            string MapName = "ENC_ROOT/US5SC34M/US5SC34M.000";
+            string MapName = "ENC_ROOT/CATALOG.031";
+            //string MapName = "ENC_ROOT/US5SC34M/US5SC34M.000";
             string rootPath = "D:/Familie/Documents/Programming/test";
             string zipPath = Path.Combine(rootPath, ZipName);
             var bla = ZipFile.OpenRead(zipPath);
@@ -27,11 +27,6 @@ namespace Shom.S57.Tests
             //reader.Read(S57map);
 
             //reader.Read(new FileStream(path, FileMode.Open));
-
-
-
-
-
             //ListFeatures(reader);
             //var features = reader.GetFeaturesOfClass(S57Objects.DEPARE);
 

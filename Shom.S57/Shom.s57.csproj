@@ -44,6 +44,7 @@
     <Compile Include="Agency.cs" />
     <Compile Include="BoundingBox.cs" />
     <Compile Include="Cell.cs" />
+    <Compile Include="Catalogue.cs" />
     <Compile Include="Datum.cs" />
     <Compile Include="Enums\Boundary.cs" />
     <Compile Include="Enums\CoordinateUnits.cs" />

@@ -20,6 +20,8 @@ namespace S57
         public BaseFile baseFile;
         public CatalogueFile catalogueFile;
 
+        public Dictionary<uint, Catalogue> ExchangeSetFiles = new Dictionary<uint, Catalogue>();
+        public Dictionary<uint, Catalogue> BaseFiles = new Dictionary<uint, Catalogue>();
         public Dictionary<string, Feature> Features = new Dictionary<string, Feature>();
         public Dictionary<string, Vector> Vectors = new Dictionary<string, Vector>();
         public Dictionary<string, Feature> newFeatures = new Dictionary<string, Feature>();
@@ -106,6 +108,7 @@ namespace S57
             using (var reader = new Iso8211Reader(stream))
             {
                 catalogueFile = new CatalogueFile(reader);
+                BuildCatalogue();
             }
         }
 
@@ -240,6 +243,23 @@ namespace S57
                 {
                     // Vector already exists
                     existingVectors.Add(vector.vectorName);
+                }
+            }
+        }
+
+
+        private void BuildCatalogue()
+        {
+            foreach (var cr in catalogueFile.CatalogueRecords) 
+            {
+                Catalogue catalog = new Catalogue(this, cr, catalogueFile);
+                uint key = catalog.RecordIdentificationNumber;
+                if (!ExchangeSetFiles.ContainsKey(key) || !BaseFiles.ContainsKey(key))
+                {
+                    if (catalog.fileName.EndsWith(".000"))
+                        BaseFiles.Add(key, catalog);
+                    else
+                        ExchangeSetFiles.Add(key, catalog);
                 }
             }
         }
