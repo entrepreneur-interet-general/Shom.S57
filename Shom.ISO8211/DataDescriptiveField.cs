@@ -34,8 +34,8 @@ namespace Shom.ISO8211
                 {
                     throw new Exception("Did not expect an ArrayDescriptor for a SingleItem DataStructureCode");
                 }
-
-                SubFieldDefinitions.Add(new SubFieldDefinition("", formatControls));
+                //Single item should imply there are no subfileds, so why try?
+                //SubFieldDefinitions.Add(new SubFieldDefinition("", formatControls)); 
             }
             else
             {
@@ -90,7 +90,8 @@ namespace Shom.ISO8211
                 if (Char.IsDigit(format[0]))
                 {
                     //assumes there will be less than 10...
-                    for (int i = 0; i < Int32.Parse(new string(new[] {format[0]})); i++)
+                    int val = (format[0] - '0');
+                        for (int i = 0; i < val; i++)
                     {
                         expandedFormats.Add(format.Substring(1, format.Length - 1));
                     }

@@ -17,37 +17,34 @@ namespace Shom.ISO8211
    
         public byte[] Bytes { get { return _bytes;  } }
         public DataDescriptiveField FieldDescription { get { return _fieldDescription;  } }
-
         public DataField(string tag, DataDescriptiveField fieldDescription, byte[] bytes) : base(tag)
         {
             _fieldDescription = fieldDescription;
             _bytes = bytes;
 
             int currentIndex = 0;
+            int start = 0;
             foreach (SubFieldDefinition subFieldDefinition in _fieldDescription.SubFieldDefinitions)
             {
                 if (subFieldDefinition.FormatTypeCode == FormatTypeCode.CharacterData)
                 {
-                    var sb = new StringBuilder();
+                    string s;
+                    start = currentIndex;
                     if (subFieldDefinition.SubFieldWidth == 0)
                     {
                         while (_bytes[currentIndex] != UnitTerminator)
                         {
-                            sb.Append((char)_bytes[currentIndex]);
                             currentIndex++;
                         }
+                        s= Encoding.ASCII.GetString(bytes, start, currentIndex-start);
                         //Consume the Terminator
                         currentIndex++;
                     }
                     else
                     {
-                        for (int i = 0; i < subFieldDefinition.SubFieldWidth; i++)
-                        {
-                            sb.Append((char)_bytes[currentIndex]);
-                            currentIndex++;
-                        }
+                        currentIndex += subFieldDefinition.SubFieldWidth;
+                        s = Encoding.ASCII.GetString(bytes, start, subFieldDefinition.SubFieldWidth);
                     }
-                    var s = sb.ToString();
                     SubFields.Add(subFieldDefinition.Tag, s);
                 }
                 else if (subFieldDefinition.FormatTypeCode == FormatTypeCode.LsofBinaryForm)
@@ -94,20 +91,44 @@ namespace Shom.ISO8211
                 }
                 else if (subFieldDefinition.FormatTypeCode == FormatTypeCode.ExplicitPoint)
                 {
+                    string s;
+                    start = currentIndex;
                     if (subFieldDefinition.SubFieldWidth == 0)
                     {
-                        throw new Exception("Expected a subfield width for Explicit Point Type");
-                    }
-                    var tempSb = new StringBuilder();
-                    for (int i = 0; i < subFieldDefinition.SubFieldWidth; i++)
-                    {
-                        tempSb.Append((char)_bytes[currentIndex]);
+                        //throw new Exception("Expected a subfield width for Explicit Point Type");
+                        //no need to throw exception, open ended floating point values (terminated by Unit terminator) are permitted, 
+                        //see S57 specification (3.1 Main, section 7.4.1)
+                        while (_bytes[currentIndex] != UnitTerminator)
+                        {
+                            currentIndex++;
+                        }
+                        s = Encoding.ASCII.GetString(bytes, start, currentIndex-start);
+                        //Consume the Terminator
                         currentIndex++;
                     }
+                    else
+                    {
+                        currentIndex += subFieldDefinition.SubFieldWidth;
+                        s = Encoding.ASCII.GetString(bytes, start, subFieldDefinition.SubFieldWidth);
+                    }
                     double value = 0;
-                    value = Double.Parse(tempSb.ToString(), CultureInfo.InvariantCulture);
+                    Double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out value);
                     SubFields.Add(subFieldDefinition.Tag, value);
                 }
+                else if (subFieldDefinition.FormatTypeCode == FormatTypeCode.ImplicitPoint) //added begin
+                {
+                    if (subFieldDefinition.SubFieldWidth == 0)
+                    {
+                        throw new Exception("Expected a subfield width for Implicit Point Type");
+                    }
+                    int value = 0;
+                    for (int i = 0; i < subFieldDefinition.SubFieldWidth; i++)
+                    {
+                        value += ((_bytes[currentIndex] - '0') * (int)Math.Pow(10, subFieldDefinition.SubFieldWidth - i - 1));
+                        currentIndex++;
+                    }
+                    SubFields.Add(subFieldDefinition.Tag, value);
+                }//added end
                 else if (subFieldDefinition.FormatTypeCode == FormatTypeCode.BitStringData)
                 {
                     if (subFieldDefinition.SubFieldWidth == 0)

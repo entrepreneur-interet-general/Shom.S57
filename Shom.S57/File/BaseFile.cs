@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Shom.ISO8211;
 
 namespace S57.File
@@ -98,15 +96,13 @@ namespace S57.File
 
             while (nextRec != null)
             {
-                DataField field = nextRec.Fields.GetFieldByTag("VRID");
-                if (field != null)
+                if(nextRec.Fields.FindFieldByTag("VRID"))
                 {
                     vr.Add(nextRec);
                 }
                 else
                 {
-                    field = nextRec.Fields.GetFieldByTag("FRID");
-                    if (field != null)
+                    if (nextRec.Fields.FindFieldByTag("FRID"))
                     {
                         fr.Add(nextRec);
                     }

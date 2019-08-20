@@ -4,13 +4,14 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{D84DD2FB-DC54-40C1-83EA-C5BA521187F8}</ProjectGuid>
+    <ProjectGuid>{13F7C857-5187-434C-A84A-972913FCB113}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>Shom.S57.Tests</RootNamespace>
     <AssemblyName>Shom.S57.Tests</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -34,6 +35,8 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -49,13 +52,13 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Shom.ISO8211\Shom.Iso8211.csproj">
-      <Project>{4c239c1d-04ea-44d9-9037-216a018f827b}</Project>
-      <Name>Shom.Iso8211</Name>
+    <ProjectReference Include="..\Shom.ISO8211\Shom.ISO8211.csproj">
+      <Project>{0a1b575b-cfa2-4e4b-9439-85c63377e0c7}</Project>
+      <Name>Shom.ISO8211</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Shom.S57\Shom.s57.csproj">
-      <Project>{446b6dc3-ef7b-4682-9f21-ed76cebca62a}</Project>
-      <Name>Shom.s57</Name>
+    <ProjectReference Include="..\Shom.S57\Shom.S57.csproj">
+      <Project>{bab6705f-05f3-4707-bce4-330ff06e66c0}</Project>
+      <Name>Shom.S57</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

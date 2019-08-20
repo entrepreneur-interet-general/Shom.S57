@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Text;
 using Shom.ISO8211;
 using S57.File;
@@ -107,70 +106,127 @@ namespace S57
 
         public Geometry GetGeometry()
         {
+            int count;
             switch (Primitive)
             {
                 case GeometricPrimitive.Point:
-                {
-                    if (VectorPtrs[0] == null || VectorPtrs[0].Vector == null) return null;
-                    return VectorPtrs[0].Vector.Geometry;
-                }
-                case GeometricPrimitive.Line:
-                {
-                    Line line = new Line();
-                    foreach (var vectorPtr in VectorPtrs)
                     {
-                        var vector = vectorPtr.Vector;
-                        if( vectorPtr.Mask == Masking.Show || 
-                            vectorPtr.Mask == Masking.NotRelevant )
+                        if (VectorPtrs[0] == null || VectorPtrs[0].Vector == null) return null;
+                        return VectorPtrs[0].Vector.Geometry;
+                    }
+                case GeometricPrimitive.Line:
+                    {
+                        //initialize StartNode Pointer for later check how to build geometry
+                        VectorRecordPointer StartNode = new VectorRecordPointer();
+                        //initialize Contour to accumulate lines
+                        Line Contour = new Line();
+                        for (int i = 0; i < VectorPtrs.Count; i++)
                         {
-                            if (vector != null)
+                            var vectorPtr = VectorPtrs[i];
+                            //first, check if vector exist, and if it is supposed to be visible 
+                            //(to improve: masked points should still be added for correct topology, just not rendered later)
+                            if (vectorPtr.Vector == null || vectorPtr.Mask == Masking.Mask) break;
+
+                            //next, check if edge needs to be reversed for the intended usage 
+                            //Do this on a copy to not mess up original record wich might be used elsewhere
+                            var edge = new List<Point>((vectorPtr.Vector.Geometry as Line).points);
+                            if (vectorPtr.Orientation == Orientation.Reverse)
                             {
-                                var l = vector.Geometry as Line;
-                                if( vectorPtr.Orientation == Orientation.Reverse )
+                                edge.Reverse();
+                                //note: Reversing is not reversing the VectorRecordPointers, see S57 Spec 3.1 section 3.20 (i.e. index [0] is now end node instead of start node)
+                                //therefore assign private StartNode pointer for some later checks 
+                                StartNode = vectorPtr.Vector.VectorRecordPointers[1];
+                            }
+                            else
+                            {
+                                StartNode = vectorPtr.Vector.VectorRecordPointers[0];
+                            }
+
+                            //now check if Contour has already accumulated points, if not just add current edge
+                            count = Contour.points.Count;
+                            if (count > 0)
+                            {
+                                //now check if existing contour should be extended
+                                if (Contour.points[count-1] == StartNode.Vector.Geometry as Point)
                                 {
-                                    var reversedList = new List<Point>(l.points);
-                                    reversedList.Reverse();
-                                    line.points.AddRange(reversedList);
+                                       Contour.points.AddRange(edge.GetRange(1, edge.Count - 1));
+                                }
+                            }
+                            else
+                            {
+                                //add current edge points to new contour
+                                Contour.points.AddRange(edge);
+                            }
+                        }
+                        //done, finish up and return
+                        return Contour;
+                    }
+                case GeometricPrimitive.Area:
+                    {
+                        //initialize PolygonSet to accumulate 1 exterior and (if available) repeated interior boundaries
+                        PolygonSet ContourSet = new PolygonSet();
+                        //initialize StartNode Pointer for check how to build geometry
+                        VectorRecordPointer StartNode = new VectorRecordPointer();
+                        //initialize Contour to accumulate boundaries
+                        Area Contour = new Area();
+                        for (int i = 0; i < VectorPtrs.Count; i++)
+                        {
+                            var vectorPtr = VectorPtrs[i];
+                            //first, check if vector exist, and if it is supposed to be visible
+                            //(to improve: masked points should still be added for correct topology, just not rendered later)
+                            if (vectorPtr.Vector == null || vectorPtr.Mask == Masking.Mask) break;
+
+                            //next, check if edge needs to be reversed for the intended usage 
+                            //Do this on a copy to not mess up original record wich might be used elsewhere
+                            var edge = new List<Point>((vectorPtr.Vector.Geometry as Line).points);
+                            if (vectorPtr.Orientation == Orientation.Reverse)
+                            {
+                                edge.Reverse();
+                                //note: Reversing is not reversing the VectorRecordPointers, see S57 Spec 3.1 section 3.20 (i.e. index [0] is now end node instead of start node)
+                                //therefore assign private StartNode pointer for some later checks 
+                                StartNode = vectorPtr.Vector.VectorRecordPointers[1];
+                            }
+                            else
+                            {
+                                StartNode = vectorPtr.Vector.VectorRecordPointers[0];
+                            }
+
+                            //now check if Contour has already accumulated points, if not just add current edge
+                            count = Contour.points.Count;
+                            if (count > 0)
+                            {
+                                //now check if existing contour should be extended, or if a new one for the next interior boundery should be started 
+                                if (Contour.points[count-1] == StartNode.Vector.Geometry as Point)
+                                {
+                                    Contour.points.AddRange(edge.GetRange(1, edge.Count-1));
                                 }
                                 else
                                 {
-                                    line.points.AddRange(l.points);
-                                }
-                            }
-                        }
-                    }
-                    return line;
-                }
-                case GeometricPrimitive.Area:
-                {
-                    Area area = new Area();
-                    foreach (var vectorPtr in VectorPtrs)
-                    {
-                        if( ( vectorPtr.Mask == Masking.Show || vectorPtr.Mask == Masking.NotRelevant ) &&
-                            ( vectorPtr.Usage == Usage.ExteriorBoundaries || vectorPtr.Usage == Usage.ExteriorBoundaryTruncatedByDataLimit ) )
-                        {
-                            var vector = vectorPtr.Vector;
-                            if (vector != null)
-                            {
-                                if (vector != null)
-                                {
-                                    var l = vector.Geometry as Line;
-                                    if (vectorPtr.Orientation == Orientation.Reverse)
+                                    //done, add current polygon boundery to ContourSet 
+                                    //verify that polygone is closed last point in list equals first
+                                    if (Contour.points[count - 1] == Contour.points[0])
                                     {
-                                        var reversedList = new List<Point>(l.points);
-                                        reversedList.Reverse();
-                                        area.points.AddRange(reversedList);
+                                        ContourSet.Areas.Add(Contour);
                                     }
                                     else
                                     {
-                                        area.points.AddRange(l.points);
+                                        //Debug.WriteLine("Panic: current polygon is not complete, and current egde is not extending it");
                                     }
+                                    //initialize new contour to accumulate next boundery, add current edge to it
+                                    Contour = new Area(); 
+                                    Contour.points.AddRange(edge);
                                 }
                             }
+                            else
+                            {
+                                //add current edge points to new contour
+                                Contour.points.AddRange(edge);
+                            }                            
                         }
+                        //done, finish up and return
+                        ContourSet.Areas.Add(Contour);
+                        return ContourSet;
                     }
-                    return area;
-                }
             }
             return null;
         }
@@ -535,10 +591,13 @@ namespace S57
             DataRecord dr = VectorPtrs[0].Vector.DataRecord;
             var sg3d = dr.Fields.GetFieldByTag("SG3D");
             var bytes = sg3d.Bytes;
-            var length = bytes.Count() - 1;
+            var length = bytes.Length - 1;
             int currentIndex = 0;
             var soundingDatas = new List<SoundingData>();
-            while (currentIndex < length && bytes[currentIndex] != DataField.UnitTerminator)
+            //to stop at DataField.UnitTerminator while reading coordinates is a bug: "31" can occur like any other byte to encode the XCOO or YCOO coordinates 
+            //e.g. it is the first byte of latitude 34.6188063 (31+26880+10616832+335544320)
+            //while (currentIndex < length && bytes[currentIndex] != DataField.UnitTerminator) //this is a bug: unit terminator causes premature termination
+            while (currentIndex < length)
             {
                 var soundingData = new SoundingData();
                 for (int i = 0; i < 4; i++)
@@ -645,6 +704,6 @@ namespace S57
         {
             get { return Code == S57Objects.C_AGGR; }
         }
-        */
+        */        
     }
 }

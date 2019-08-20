@@ -1,5 +1,4 @@
-﻿
-namespace S57
+﻿namespace S57
 {
     public class BoundingBox
     {

@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Shom.ISO8211;
 using S57.File;
 
@@ -34,13 +32,12 @@ namespace S57
             get
             {
                 // Point ( IsolatedNode || ConnectedNode )
-                if (vectorName.Type == VectorType.isolatedNode ||
-                    vectorName.Type == VectorType.connectedNode)
+                if (vectorName.Type == (uint)VectorType.isolatedNode || vectorName.Type == (uint)VectorType.connectedNode)
                 {
                     return geometry;
                 }
                 // Edge
-                else if (vectorName.Type == VectorType.edge)
+                else if (vectorName.Type == (uint)VectorType.edge)
                 {
                     if (geometry != null && !(geometry is Point) )
                     {
@@ -149,11 +146,13 @@ namespace S57
             var sg2d = vr.Fields.GetFieldByTag("SG2D");
             if (sg2d != null)
             {
-                if (vectorName.Type == VectorType.connectedNode || vectorName.Type == VectorType.isolatedNode)
+                //if (vectorName.Type == VectorType.connectedNode || vectorName.Type == VectorType.isolatedNode)
+                if (vectorName.Type == (uint)VectorType.connectedNode || vectorName.Type == (uint)VectorType.isolatedNode)
                 {
                     var ycoo = sg2d.GetDouble("YCOO");
                     var xcoo = sg2d.GetDouble("XCOO");
                     geometry = new Point(xcoo, ycoo);
+                    //Debug.WriteLine($"{ycoo:0.0#####}");
                 }
                 else
                 {
@@ -164,7 +163,10 @@ namespace S57
                     var line = geometry as Line;
                     reader.BindVectorToVectorRecordPointsOf(this);
                     line.points.Add(VectorRecordPointers[0].Vector.geometry as Point);
-                    while (currentIndex < length && bytes[currentIndex] != DataField.UnitTerminator)
+                    //to stop at DataField.UnitTerminator while reading coordinates is a bug: "31" can occur like any other byte to encode the XCOO or YCOO coordinates 
+                    //e.g. it is the first byte of latitude 34.6188063 (31+26880+10616832+335544320)
+                    //while (currentIndex < length && bytes[currentIndex] != DataField.UnitTerminator) //this is a bug: unit terminator causes premature termination
+                    while (currentIndex < length)
                     {
                         var point = new Point();
                         for (int i = 0; i < 4; i++)
@@ -176,6 +178,8 @@ namespace S57
                             }
                             point.Y += tempVal;
                         }
+                        var b = point.Y;
+                        //Debug.WriteLine($"{b:0.0#####}");
                         point.Y /= baseFile.coordinateMultiplicationFactor;
                         for (int i = 0; i < 4; i++)
                         {
@@ -197,9 +201,13 @@ namespace S57
                 var sg3d = vr.Fields.GetFieldByTag("SG3D");
                 if (sg3d != null)
                 {
+                    //does this make sense here? Are there 3D points where only 2D is of interest? Alternative proposal: 
+                    //put entire method "ExtractSoundings()" here, store List under new Vector member variable "private List<SoundingData> soundingMultipoint"  
+                    //would make MultiPoint directly accessible under the respective Soundingfeature without need to call additional method.
                     var ycoo = sg3d.GetDouble("YCOO");
                     var xcoo = sg3d.GetDouble("XCOO");
                     geometry = new Point(xcoo, ycoo);
+                                                       //Debug.WriteLine($"{ycoo:0.0#####}");  
                 }
                 else
                 {

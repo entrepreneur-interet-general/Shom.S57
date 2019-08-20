@@ -1,19 +1,17 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
-    <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{4C239C1D-04EA-44D9-9037-216A018F827B}</ProjectGuid>
+    <ProjectGuid>{0A1B575B-CFA2-4E4B-9439-85C63377E0C7}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Iso8211</RootNamespace>
-    <AssemblyName>Iso8211</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <TargetFrameworkProfile>Profile4</TargetFrameworkProfile>
+    <RootNamespace>Shom.ISO8211</RootNamespace>
+    <AssemblyName>Shom.ISO8211</AssemblyName>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <ProjectTypeGuids>{786C830F-07A1-408B-BD7F-6EE04809D6DB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <Deterministic>true</Deterministic>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -33,9 +31,17 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <!-- A reference to the entire .NET Framework is automatically included -->
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BufferedBinaryReader.cs" />
     <Compile Include="DataDescriptiveField.cs" />
     <Compile Include="DataDescriptiveRecord.cs" />
     <Compile Include="DataDescriptiveRecordField.cs" />
@@ -45,10 +51,10 @@
     <Compile Include="DataRecordFields.cs" />
     <Compile Include="DataStructureCode.cs" />
     <Compile Include="DataTypeCode.cs" />
-    <Compile Include="ExtendedBinaryForm.cs" />
-    <Compile Include="Field.cs" />
     <Compile Include="DirectoryEntry.cs" />
     <Compile Include="EntryMap.cs" />
+    <Compile Include="ExtendedBinaryForm.cs" />
+    <Compile Include="Field.cs" />
     <Compile Include="FileControlField.cs" />
     <Compile Include="FormatTypeCode.cs" />
     <Compile Include="Iso8211Reader.cs" />
@@ -58,12 +64,5 @@
     <Compile Include="RecordLeader.cs" />
     <Compile Include="SubFieldDefinition.cs" />
   </ItemGroup>
-  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

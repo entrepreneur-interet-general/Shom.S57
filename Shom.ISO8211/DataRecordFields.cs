@@ -11,11 +11,22 @@ namespace Shom.ISO8211
             {
                 if (field.Tag == tag)
                 {
-                    return field;
+                    return field; 
                 }
             }
 
             return null;
+        }
+        public bool FindFieldByTag(string tag)
+        {
+            foreach (var field in this)
+            {
+                if (field.Tag == tag)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public override string ToString()

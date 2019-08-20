@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
 using Shom.ISO8211;
 using S57.File;
 
@@ -18,16 +15,20 @@ namespace S57
         public List<Cell> cells = new List<Cell>();
         public Cell cell;
         public BaseFile baseFile;
+        public CatalogueFile catalogueFile;
+        public ProductInfo productInfo;
 
-        public Dictionary<string, Feature> Features = new Dictionary<string, Feature>();
-        public Dictionary<string, Vector> Vectors = new Dictionary<string, Vector>();
-        public Dictionary<string, Feature> newFeatures = new Dictionary<string, Feature>();
+        public Dictionary<uint, Catalogue> ExchangeSetFiles = new Dictionary<uint, Catalogue>();
+        public Dictionary<uint, Catalogue> BaseFiles = new Dictionary<uint, Catalogue>();
+        public Dictionary<LongName, Feature> Features = new Dictionary<LongName, Feature>();
+        public Dictionary<VectorName, Vector> Vectors = new Dictionary<VectorName, Vector>();
+        public Dictionary<LongName, Feature> newFeatures = new Dictionary<LongName, Feature>();
 
-        public List<string> existingLNAMs = new List<string>();
+        public List<LongName> existingLNAMs = new List<LongName>();
         public List<VectorName> existingVectors = new List<VectorName>();
-        public List<string> notFoundGeometries = new List<string>();
+        public List<LongName> notFoundGeometries = new List<LongName>();
 
-        private Feature FindFeatureByLnam(string lnam)
+        private Feature FindFeatureByLnam(LongName lnam)
         {
             if (Features.ContainsKey(lnam))
             {
@@ -99,6 +100,24 @@ namespace S57
             mapIndex++;
         }
 
+        public void ReadCatalogue(System.IO.Stream stream)
+        {
+            newFeatures.Clear();
+            using (var reader = new Iso8211Reader(stream))
+            {
+                catalogueFile = new CatalogueFile(reader);
+                BuildCatalogue();
+            }
+        }
+
+        public void ReadProductInfo(System.IO.Stream stream)
+        {
+            using (var reader = new Iso8211Reader(stream))
+            {
+                productInfo = new ProductInfo(reader);
+            }
+        }
+
         public void Read(System.IO.Stream stream)
         {
             newFeatures.Clear();
@@ -111,6 +130,23 @@ namespace S57
             }
         }
 
+        private void BuildCatalogue()
+        {
+            foreach (var cr in catalogueFile.CatalogueRecords)
+            {
+                Catalogue catalog = new Catalogue(this, cr, catalogueFile);
+                uint key = catalog.RecordIdentificationNumber;
+                if (!ExchangeSetFiles.ContainsKey(key) || !BaseFiles.ContainsKey(key))
+                {
+                    if (catalog.fileName.EndsWith(".000"))
+                    {
+                        BaseFiles.Add(key, catalog);
+                    }
+                    else
+                        ExchangeSetFiles.Add(key, catalog);
+                }
+            }
+        }
         private void BuildFeatures()
         {
             foreach (var fr in baseFile.FeatureRecords) // cell.fr)
@@ -120,15 +156,15 @@ namespace S57
                 {
                     DeleteFeatureByFRID(feature);
                 }
-                else if (!Features.ContainsKey(feature.lnam.ToString()))
+                else if (!Features.ContainsKey(feature.lnam))
                 {
                     AddFeature(feature);
                 }
                 else
                 {
                     // Existing LNAM
-                    existingLNAMs.Add(feature.lnam.ToString());
-                    var existingFeature = Features[feature.lnam.ToString()];
+                    existingLNAMs.Add(feature.lnam);
+                    var existingFeature = Features[feature.lnam];
                     if (feature.RecordUpdateInstruction == RecordUpdate.Modify)
                     {
                         ApplyFeatureModification(feature, existingFeature);
@@ -146,24 +182,24 @@ namespace S57
 
         private void AddFeature(Feature feature)
         {
-            Features.Add(feature.lnam.ToString(), feature);
-            newFeatures.Add(feature.lnam.ToString(), feature);
+            Features.Add(feature.lnam, feature);
+            newFeatures.Add(feature.lnam, feature);
             UpdateFeaturePtrs(feature);
             UpdateVectorPtrs(feature);
         }
 
         private void DeleteFeatureByFRID(Feature feature)
         {
-            string lnam = null;
+            LongName lnam = new LongName();
             foreach (Feature f in Features.Values)
             {
                 if (f.cell.DataSetName == feature.cell.DataSetName &&
                     f.RecordIdentificationNumber == feature.RecordIdentificationNumber)
                 {
-                    lnam = f.lnam.ToString();
+                    lnam = f.lnam;
                 }
             }
-            if (lnam != null)
+            if (lnam.ProducingAgency != 0 && lnam.FeatureIdentificationNumber !=0 && lnam.FeatureIdentificationSubdivision!=0)
             {
                 Features.Remove(lnam);
             }
@@ -210,17 +246,16 @@ namespace S57
             foreach (var vr in baseFile.VectorRecords) // cell.vr)
             {
                 Vector vector = new Vector(this, vr, baseFile);
-                string key = VectorKey(vector);
-                if (!Vectors.ContainsKey(key))
+                if (!Vectors.ContainsKey(vector.vectorName))
                 {
-                    Vectors.Add(key, vector);
+                    Vectors.Add(vector.vectorName, vector);
                     // VECTORS ASSOCIATION
                     if (vector.VectorRecordPointers != null)
                     {
                         BindVectorToVectorRecordPointsOf(vector);
                     }
                     // LAT/LONG UPDATE
-                    if (vector.Geometry is Point)
+                    if (vector.Geometry is Point) //assemble all points for a given vector record, checks if geometry return type is point or line
                     {
                         ((Point)vector.Geometry).X /= baseFile.coordinateMultiplicationFactor;
                         ((Point)vector.Geometry).Y /= baseFile.coordinateMultiplicationFactor;
@@ -234,17 +269,16 @@ namespace S57
             }
         }
 
+
+
+
         public void BindVectorToVectorRecordPointsOf(Vector vector)
         {
             foreach (var v in vector.VectorRecordPointers)
             {
-                string key = VectorKey(v.Name);
-                if (key != null)
+                if (Vectors.ContainsKey(v.Name))
                 {
-                    if (Vectors.ContainsKey(key))
-                    {
-                        v.Vector = Vectors[key];
-                    }
+                    v.Vector = Vectors[v.Name];
                 }
             }
         }
@@ -349,9 +383,9 @@ namespace S57
                 {
                     if (featurePtr.Feature == null)
                     {
-                        if (Features.ContainsKey(featurePtr.LNAM.ToString()))
+                        if (Features.ContainsKey(featurePtr.LNAM))
                         {
-                            featurePtr.Feature = Features[featurePtr.LNAM.ToString()];
+                            featurePtr.Feature = Features[featurePtr.LNAM];
                         }
                     }
                 }
@@ -366,17 +400,14 @@ namespace S57
                 {
                     if (vectorPtr.Vector == null)
                     {
-                        VectorName vectorName = vectorPtr.Name;
-                        string key = string.Format("{0}-{1}", mapIndex, vectorName.ToString());
-
-                        if (Vectors.ContainsKey(key))
+                        if (Vectors.ContainsKey(vectorPtr.Name))
                         {
-                            var vector = Vectors[key];
+                            var vector = Vectors[vectorPtr.Name];
                             vectorPtr.Vector = vector;
                         }
                         else
                         {
-                            notFoundGeometries.Add(feature.lnam.ToString());
+                            notFoundGeometries.Add(feature.lnam);
                         }
                     }
                 }
@@ -396,13 +427,23 @@ namespace S57
                 var isNumeric = int.TryParse(codes[i], out int n);
                 if (!isNumeric)
                 {
-                    codes[i] = S57Objects.Get(codes[i]).Code.ToString();
+                    codes[i] = S57Objects.Get(codes[i]).Code.ToString(); //performance-killer: convert uint to string, to later compare strings. Better: compare uints
                 }
             }
-            List<string> lCodes = codes.ToList();
-            var features = Features.Values.ToList();
-            var filteredFeatures = features.Where(f => lCodes.Contains(f.Code.ToString()));
-            Features = filteredFeatures.ToDictionary(f => f.lnam.ToString(), f => f);
+            List<string> lCodes = new List<string>();
+            lCodes.AddRange(codes);
+            List<Feature> features = new List<Feature>();
+            features.AddRange(Features.Values);
+            Features = new Dictionary<LongName, Feature>();
+            foreach (var feature in features)
+            {
+                foreach (var code in lCodes)
+                {
+                    if (code == feature.Code.ToString()) { }
+                    Features.Add(feature.lnam, feature);
+                }
+            }
+
             return features.Count;
         }
 
@@ -421,8 +462,8 @@ namespace S57
             PurgeResults result = new PurgeResults();
             result.NbFeaturesBefore = Features.Count;
             result.NbVectorsBefore = Vectors.Count;
-            Dictionary<string, VectorName> usedVectors = new Dictionary<string, VectorName>();
-            List<string> unusedLnams = new List<string>();
+            List<VectorName> usedVectors = new List<VectorName>();
+            List<LongName> unusedLnams = new List<LongName>();
             foreach (Feature feature in newFeatures.Values)
             {
                 var featureInfo = S57Objects.Get(feature.Code);
@@ -437,17 +478,16 @@ namespace S57
                             {
                                 UpdateVectorPtrs(feature);
                             }
-                            string key = VectorKey(vectorPtr.Vector.vectorName.ToString());
-                            if (!usedVectors.ContainsKey(key))
+                            if (!usedVectors.Contains(vectorPtr.Vector.vectorName))
                             {
-                                usedVectors.Add(key, vectorPtr.Vector.vectorName);
+                                usedVectors.Add(vectorPtr.Vector.vectorName);
                             }
                         }
                     }
                 }
                 else
                 {
-                    unusedLnams.Add(feature.lnam.ToString());
+                    unusedLnams.Add(feature.lnam);
                 }
             }
             result.NbRemovedFeatures = unusedLnams.Count;
@@ -457,16 +497,16 @@ namespace S57
                 Features.Remove(lnam);
             }
             int index = Vectors.Count - 1;
-            var vectors = Vectors.Values.ToList();
+            List<Vector> vectors = new List<Vector>();
+            vectors.AddRange(Vectors.Values);
             while (index >= 0)
             {
-                var vectorKey = VectorKey(vectors[index].vectorName.ToString());
-                if( !usedVectors.ContainsKey( vectorKey )  )
+                if (!usedVectors.Contains(vectors[index].vectorName))
                 {
-                    if (Vectors.Remove(vectorKey))
+                    if (Vectors.Remove(vectors[index].vectorName))
                     {
                         result.NbRemovedVectors++;
-                    } 
+                    }
                 }
                 index--;
             }
@@ -485,7 +525,13 @@ namespace S57
 
         public List<Feature> GetFeaturesOfClass(uint code)
         {
-            return Features.Values.Where(f => f.Code == code).ToList();
+            List<Feature> tempList = new List<Feature>();
+            foreach (var feat in Features)
+            {
+                if (feat.Value.Code == code)
+                    tempList.Add(feat.Value);
+            }
+            return tempList;
         }
 
         public List<Feature> GetFeaturesOfClasses( string[] acronyms)
@@ -501,7 +547,16 @@ namespace S57
 
         public List<Feature> GetFeaturesOfClasses( uint[] codes)
         {
-            return Features.Values.Where(f => codes.Contains( f.Code ) ).ToList();
+            List<Feature> tempList = new List<Feature>();
+            foreach (var feat in Features)
+            {
+                foreach (var code in codes)
+                {
+                    if (code == feat.Value.Code)
+                        tempList.Add(feat.Value);
+                }
+            }
+            return tempList;
         }
     }
 }
