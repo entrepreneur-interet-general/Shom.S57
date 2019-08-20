@@ -1,11 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Text;
 using Shom.ISO8211;
 using S57.File;
-using System.Diagnostics;
 
 namespace S57
 {
@@ -108,6 +106,7 @@ namespace S57
 
         public Geometry GetGeometry()
         {
+            int count;
             switch (Primitive)
             {
                 case GeometricPrimitive.Point:
@@ -121,7 +120,7 @@ namespace S57
                         VectorRecordPointer StartNode = new VectorRecordPointer();
                         //initialize Contour to accumulate lines
                         Line Contour = new Line();
-                        for (int i = 0; i < VectorPtrs.Count(); i++)
+                        for (int i = 0; i < VectorPtrs.Count; i++)
                         {
                             var vectorPtr = VectorPtrs[i];
                             //first, check if vector exist, and if it is supposed to be visible 
@@ -144,12 +143,13 @@ namespace S57
                             }
 
                             //now check if Contour has already accumulated points, if not just add current edge
-                            if (Contour.points.Count() > 0)
+                            count = Contour.points.Count;
+                            if (count > 0)
                             {
                                 //now check if existing contour should be extended
-                                if (Contour.points.Last() == StartNode.Vector.Geometry as Point)
+                                if (Contour.points[count-1] == StartNode.Vector.Geometry as Point)
                                 {
-                                    Contour.points.AddRange(edge.Skip(1));
+                                       Contour.points.AddRange(edge.GetRange(1, edge.Count - 1));
                                 }
                             }
                             else
@@ -169,7 +169,7 @@ namespace S57
                         VectorRecordPointer StartNode = new VectorRecordPointer();
                         //initialize Contour to accumulate boundaries
                         Area Contour = new Area();
-                        for (int i = 0; i < VectorPtrs.Count(); i++)
+                        for (int i = 0; i < VectorPtrs.Count; i++)
                         {
                             var vectorPtr = VectorPtrs[i];
                             //first, check if vector exist, and if it is supposed to be visible
@@ -192,24 +192,25 @@ namespace S57
                             }
 
                             //now check if Contour has already accumulated points, if not just add current edge
-                            if (Contour.points.Count() > 0)
+                            count = Contour.points.Count;
+                            if (count > 0)
                             {
                                 //now check if existing contour should be extended, or if a new one for the next interior boundery should be started 
-                                if (Contour.points.Last() == StartNode.Vector.Geometry as Point)
+                                if (Contour.points[count-1] == StartNode.Vector.Geometry as Point)
                                 {
-                                    Contour.points.AddRange(edge.Skip(1));
+                                    Contour.points.AddRange(edge.GetRange(1, edge.Count-1));
                                 }
                                 else
                                 {
                                     //done, add current polygon boundery to ContourSet 
                                     //verify that polygone is closed last point in list equals first
-                                    if (Contour.points.Last() == Contour.points.First())
+                                    if (Contour.points[count - 1] == Contour.points[0])
                                     {
                                         ContourSet.Areas.Add(Contour);
                                     }
                                     else
                                     {
-                                        Debug.WriteLine("Panic: current polygon is not complete, and current egde is not extending it");
+                                        //Debug.WriteLine("Panic: current polygon is not complete, and current egde is not extending it");
                                     }
                                     //initialize new contour to accumulate next boundery, add current edge to it
                                     Contour = new Area(); 
@@ -590,7 +591,7 @@ namespace S57
             DataRecord dr = VectorPtrs[0].Vector.DataRecord;
             var sg3d = dr.Fields.GetFieldByTag("SG3D");
             var bytes = sg3d.Bytes;
-            var length = bytes.Count() - 1;
+            var length = bytes.Length - 1;
             int currentIndex = 0;
             var soundingDatas = new List<SoundingData>();
             //to stop at DataField.UnitTerminator while reading coordinates is a bug: "31" can occur like any other byte to encode the XCOO or YCOO coordinates 

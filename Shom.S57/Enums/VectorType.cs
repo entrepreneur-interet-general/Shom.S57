@@ -5,7 +5,7 @@ using System.Text;
 
 namespace S57
 {
-    public enum VectorType : int
+    public enum VectorType : uint
     {
         isolatedNode = 110,
         connectedNode = 120,

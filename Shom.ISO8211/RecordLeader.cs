@@ -18,16 +18,10 @@ namespace Shom.ISO8211
 
         public RecordLeader(byte[] bytes)
         {
-            var sb = new StringBuilder();
-            //var sbRecordLength = new StringBuilder();
             for (int i = 0; i < 5; i++)
             {
-                //sbRecordLength.Append((char) bytes[i]);
-                sb.Append((char)bytes[i]);
+                RecordLength += ((bytes[i] - '0') * (int)Math.Pow(10, 4 - i));
             }
-
-            //RecordLength = Int32.Parse(sbRecordLength.ToString());
-            RecordLength = Int32.Parse(sb.ToString());
 
             InterchangeLevel = (char) bytes[5];
             LeaderIdentifier = (char) bytes[6];
@@ -43,31 +37,28 @@ namespace Shom.ISO8211
             }
             VersionNumber = (char) bytes[8];
             ApplicationIndicator = (char) bytes[9];
-            var fieldControlLengthChars = new[] {(char) bytes[10], (char) bytes[11]};
             if (LeaderIdentifier == 'L')
             {
-                FieldControlLength = Int32.Parse(new string(fieldControlLengthChars));
+                FieldControlLength = (bytes[10] - '0') * 10 + (bytes[11] - '0');
             }
 
-            sb.Clear();
-            //var sbBaseAddress = new StringBuilder();
             for (int i = 12; i < 17; i++)
             {
-                //sbBaseAddress.Append((char) bytes[i]);
-                sb.Append((char)bytes[i]);
+                BaseAddressOfFieldArea += ((bytes[i] - '0') * (int)Math.Pow(10, 16 - i));
             }
-            //BaseAddressOfFieldArea = Int32.Parse(sbBaseAddress.ToString());
-            BaseAddressOfFieldArea = Int32.Parse(sb.ToString());
 
             ExtendedCharacterSetIndicator = new[] {(char) bytes[17], (char) bytes[18], (char) bytes[19], '\0'}; //added \0
 
-            var entryMapBytes = new byte[4];
-            Array.Copy(bytes, 20, entryMapBytes, 0, 4);
+            //var entryMapBytes = new byte[4];
+            //Array.Copy(bytes, 20, entryMapBytes, 0, 4);
 
-            var entryMap = new EntryMap(entryMapBytes);
+            //var entryMap = new EntryMap(entryMapBytes);
+            //EntryMap = entryMap;
+
+            ArraySegment<byte> entryMapBytes = new ArraySegment<byte>(bytes, 20, 4);
+            EntryMap = new EntryMap(entryMapBytes);
 
 
-            EntryMap = entryMap;
         }
 
         public override string ToString()

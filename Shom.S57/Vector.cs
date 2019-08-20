@@ -1,10 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Shom.ISO8211;
 using S57.File;
-using System.Diagnostics;
 
 namespace S57
 {
@@ -35,13 +32,12 @@ namespace S57
             get
             {
                 // Point ( IsolatedNode || ConnectedNode )
-                if (vectorName.Type == VectorType.isolatedNode ||
-                    vectorName.Type == VectorType.connectedNode)
+                if (vectorName.Type == (uint)VectorType.isolatedNode || vectorName.Type == (uint)VectorType.connectedNode)
                 {
                     return geometry;
                 }
                 // Edge
-                else if (vectorName.Type == VectorType.edge)
+                else if (vectorName.Type == (uint)VectorType.edge)
                 {
                     if (geometry != null && !(geometry is Point) )
                     {
@@ -150,7 +146,8 @@ namespace S57
             var sg2d = vr.Fields.GetFieldByTag("SG2D");
             if (sg2d != null)
             {
-                if (vectorName.Type == VectorType.connectedNode || vectorName.Type == VectorType.isolatedNode)
+                //if (vectorName.Type == VectorType.connectedNode || vectorName.Type == VectorType.isolatedNode)
+                if (vectorName.Type == (uint)VectorType.connectedNode || vectorName.Type == (uint)VectorType.isolatedNode)
                 {
                     var ycoo = sg2d.GetDouble("YCOO");
                     var xcoo = sg2d.GetDouble("XCOO");

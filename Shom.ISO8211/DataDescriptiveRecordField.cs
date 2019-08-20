@@ -9,13 +9,14 @@ namespace Shom.ISO8211
         public char FieldTerminatorPrintableGraphic;
         public char[] TruncatedEscapeSequence = new char[3];
         public char UnitTerminatorPrintableGraphic;
+        int val;
 
         public DataDescriptiveRecordField(string tag, byte[] fieldControls) : base(tag)
         {
-            int val = Int32.Parse(((char) fieldControls[0]).ToString());
+            val = (fieldControls[0]-'0');
             DataStructureCode = (DataStructureCode) val;
 
-            val = Int32.Parse(((char) fieldControls[1]).ToString());
+            val = (fieldControls[1] - '0');
             DataTypeCode = (DataTypeCode) val;
 
             if (DataTypeCode == DataTypeCode.BitStringIncludingBinaryForms && (char) fieldControls[2] != '0' &&

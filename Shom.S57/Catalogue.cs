@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Shom.ISO8211;
+﻿using Shom.ISO8211;
 using S57.File;
-using System.Diagnostics;
 
 namespace S57
 {
@@ -15,6 +10,8 @@ namespace S57
         public uint RecordIdentificationNumber;
         public string fileName;
         public string fileLongName;
+        public uint NavigationalPurpose;
+        public uint CompilationScale;
         public double southernMostLatitude;
         public double westernMostLongitude;
         public double northernMostLatitude;

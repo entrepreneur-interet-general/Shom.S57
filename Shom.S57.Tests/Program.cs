@@ -17,18 +17,19 @@ namespace Shom.S57.Tests
             //string path = args[0];
             var reader = new S57Reader();
             string ZipName = "NC_ENCs.zip";
-            string MapName = "ENC_ROOT/CATALOG.031";
-            //string MapName = "ENC_ROOT/US5SC34M/US5SC34M.000";
+            //string MapName = "ENC_ROOT/CATALOG.031";
+            //string MapName = "ENC_ROOT/US5NC51M/US5NC51M.000";
+            string MapName = "ENC_ROOT/US5NC18M/US5NC18M.000";
             string rootPath = "D:/Familie/Documents/Programming/test";
             string zipPath = Path.Combine(rootPath, ZipName);
             var bla = ZipFile.OpenRead(zipPath);
             Stream S57map = bla.GetEntry(MapName).Open();
-            reader.ReadCatalogue(S57map);
-            //reader.Read(S57map);
+            //reader.ReadCatalogue(S57map);
+            reader.Read(S57map);
 
             //reader.Read(new FileStream(path, FileMode.Open));
             //ListFeatures(reader);
-            //var features = reader.GetFeaturesOfClass(S57Objects.DEPARE);
+            var features = reader.GetFeaturesOfClass(S57Objects.DEPARE);
 
             //var test1 = features.First(x => x.RecordName == 6140u);
             //var test2 = features.First(x => x.RecordName == 6140u).GetGeometry() as PolygonSet;
@@ -37,21 +38,34 @@ namespace Shom.S57.Tests
             //var test1 = features.First(x => x.RecordName == 6134u);
             //var test2 = features.First(x => x.RecordName == 6134u).GetGeometry() as PolygonSet;
             //var test1 = features.First(x => x.RecordName == 6155u);
-            //var test2 = features.First(x => x.RecordName == 6155u).GetGeometry() as Area;
-            //var features = reader.GetFeaturesOfClass(S57Objects.DEPCNT);
-            //var test1 = features.First(x => x.RecordName == 6345u);
-            //var test2 = features.First(x => x.RecordName == 6345u).GetGeometry() as Line;
-            //foreach (var xyz in test2.Areas)
-            //{
-            //foreach (var xy in xyz.points)
-            //foreach (var xy in test2.points)
-            //{
-            //    var a = xy.X;
-            //    var b = xy.Y;
-            //    Console.WriteLine($"{a:0.0######}" + " , " + $"{b:0.0######}");
-            //}
-            //}
-            Console.ReadKey();
+            var test2 = features.First(x => x.RecordName == 6155u).GetGeometry() as Area;
+            features = reader.GetFeaturesOfClass(S57Objects.SOUNDG);
+            for (int i = 0; i < features.Count; i++)
+            {
+                if (features[i].Primitive == GeometricPrimitive.Point)
+                {
+                    var TempSet = features[i].ExtractSoundings();
+                }
+                else
+                {
+                    continue;
+                }
+            }
+
+                //var features = reader.GetFeaturesOfClass(S57Objects.DEPCNT);
+                //var test1 = features.First(x => x.RecordName == 6345u);
+                //var test2 = features.First(x => x.RecordName == 6345u).GetGeometry() as Line;
+                //foreach (var xyz in test2.Areas)
+                //{
+                //foreach (var xy in xyz.points)
+                //foreach (var xy in test2.points)
+                //{
+                //    var a = xy.X;
+                //    var b = xy.Y;
+                //    Console.WriteLine($"{a:0.0######}" + " , " + $"{b:0.0######}");
+                //}
+                //}
+                Console.ReadKey();
 
         }
                          

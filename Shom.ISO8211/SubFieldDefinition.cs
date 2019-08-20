@@ -69,8 +69,8 @@ namespace Shom.ISO8211
 
         private void ParseBinaryFormData(string format)
         {
-            BinaryFormSubType = (ExtendedBinaryForm) Int32.Parse(format[1].ToString());
-            BinaryFormPrecision = Int32.Parse(format[2].ToString());
+            BinaryFormSubType = (ExtendedBinaryForm)(format[1]-'0');
+            BinaryFormPrecision = (format[2]-'0');
         }
 
         public override string ToString()

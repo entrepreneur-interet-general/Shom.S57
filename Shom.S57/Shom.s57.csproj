@@ -62,6 +62,7 @@
     <Compile Include="FeatureRecordPointer.cs" />
     <Compile Include="File\BaseFile.cs" />
     <Compile Include="File\CatalogueFile.cs" />
+    <Compile Include="File\ProductInfo.cs" />
     <Compile Include="File\UpdateFile.cs" />
     <Compile Include="Geometry\Area.cs" />
     <Compile Include="Geometry\Geometry.cs" />

@@ -90,7 +90,8 @@ namespace Shom.ISO8211
                 if (Char.IsDigit(format[0]))
                 {
                     //assumes there will be less than 10...
-                    for (int i = 0; i < Int32.Parse(new string(new[] {format[0]})); i++)
+                    int val = (format[0] - '0');
+                        for (int i = 0; i < val; i++)
                     {
                         expandedFormats.Add(format.Substring(1, format.Length - 1));
                     }

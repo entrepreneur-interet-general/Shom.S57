@@ -1,26 +1,31 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace S57
 {
-    public class VectorName
+    public struct VectorName : IEquatable<VectorName>
     {
+        public uint Type;
+        public uint RecordIdentificationNumber;
         public VectorName(uint rcnm, uint rcid)
         {
-            Type = (VectorType)rcnm;
-            RecordIdentificationNumber = rcid; 
+            Type = rcnm;
+            RecordIdentificationNumber = rcid;
         }
-
-        public VectorType Type;
-        public VectorType RecordName { get { return Type; } }
-        public uint RecordIdentificationNumber;
-
-        public override string ToString()
+        public bool Equals(VectorName other)
         {
-            return string.Format( "{0}-{1}", Type.ToString() , RecordIdentificationNumber );
+            return this.Type == other.Type && this.RecordIdentificationNumber == other.RecordIdentificationNumber;
+        }
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+            return obj is VectorName && Equals((VectorName)obj);
+        }
+        public override int GetHashCode()
+        {
+            return ((int)this.Type * 397) ^ (int)this.RecordIdentificationNumber;
         }
     }
-
 }

@@ -1,5 +1,7 @@
 using System;
 using System.Text;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace Shom.ISO8211
 {
@@ -9,8 +11,9 @@ namespace Shom.ISO8211
         private readonly int _sizeOfPositionField;
         private readonly int _sizeOfTagField;
 
-        public EntryMap(byte[] bytes)
+        public EntryMap(ArraySegment<byte> bytessegment)
         {
+            var bytes = (IList<byte>)bytessegment;
             _sizeOfLengthField = ByteToCharToInt(bytes[0]);
             _sizeOfPositionField = ByteToCharToInt(bytes[1]);
             var reserved = (char) bytes[2];
@@ -46,7 +49,8 @@ namespace Shom.ISO8211
 
         private int ByteToCharToInt(byte b)
         {
-            return Int32.Parse(new string(new[] {(char) b}));
+            //return Int32.Parse(new string(new[] {(char) b}));
+            return (b - '0');
         }
     }
 }

@@ -41,6 +41,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BufferedBinaryReader.cs" />
     <Compile Include="DataDescriptiveField.cs" />
     <Compile Include="DataDescriptiveRecord.cs" />
     <Compile Include="DataDescriptiveRecordField.cs" />
