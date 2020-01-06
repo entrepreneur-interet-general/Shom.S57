@@ -1,5 +1,6 @@
 ﻿using Shom.ISO8211;
 using S57.File;
+using System.Collections.Generic;
 
 namespace S57
 {
@@ -17,6 +18,10 @@ namespace S57
         public double northernMostLatitude;
         public double easternMostLongitude;
 
+        // some private variables  
+        object[] subFieldRow;
+        Dictionary<string, int> tagLookup;
+
         public DataRecord DataRecord
         {
             get { return _cr; }
@@ -32,16 +37,18 @@ namespace S57
         public void BuildFromDataRecord(S57Reader reader, DataRecord cr, CatalogueFile catalogueFile)
         {
             // Record Identifier Field
-            var rcid = cr.Fields.GetFieldByTag("CATD");
-            if (rcid != null)
+            var catd = cr.Fields.GetFieldByTag("CATD");
+            if (catd != null)
             {
-                RecordIdentificationNumber = (uint)rcid.GetInt32("RCID");
-                fileName = rcid.GetString("FILE");
-                fileLongName = rcid.GetString("LFIL");
-                southernMostLatitude = rcid.GetDouble("SLAT");
-                westernMostLongitude = rcid.GetDouble("WLON");
-                northernMostLatitude = rcid.GetDouble("NLAT");
-                easternMostLongitude = rcid.GetDouble("ELON");
+                subFieldRow = catd.subFields.Values[0];
+                tagLookup = catd.subFields.TagIndex;
+                RecordIdentificationNumber = subFieldRow.GetUInt32(tagLookup["RCID"]); //this one ist stored as integer, so implementing GetUint32 to do merely a cast will fail
+                fileName = subFieldRow.GetString(tagLookup["FILE"]);
+                fileLongName = subFieldRow.GetString(tagLookup["LFIL"]);                
+                southernMostLatitude = subFieldRow.GetDouble(tagLookup["SLAT"]);
+                westernMostLongitude = subFieldRow.GetDouble(tagLookup["WLON"]);
+                northernMostLatitude = subFieldRow.GetDouble(tagLookup["NLAT"]);
+                easternMostLongitude = subFieldRow.GetDouble(tagLookup["ELON"]);
             }   
         }        
     }

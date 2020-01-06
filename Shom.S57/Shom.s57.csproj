@@ -33,6 +33,8 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -70,7 +72,6 @@
     <Compile Include="Geometry\Point.cs" />
     <Compile Include="Geometry\Polygonset.cs" />
     <Compile Include="LongName.cs" />
-    <Compile Include="Name.cs" />
     <Compile Include="ObjectClassInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RecordName.cs" />

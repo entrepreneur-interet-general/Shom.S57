@@ -2,18 +2,25 @@
 
 namespace S57
 {
-    public struct VectorName : IEquatable<VectorName>
+    public struct NAMEkey : IEquatable<NAMEkey>
     {
-        public uint Type;
+        public uint RecordName;
         public uint RecordIdentificationNumber;
-        public VectorName(uint rcnm, uint rcid)
+        public NAMEkey(byte[] bytes)
         {
-            Type = rcnm;
+            if (bytes.Length != 5)
+                throw new ArgumentException("Expected byte array with 5 items");
+            RecordName = bytes[0];
+            RecordIdentificationNumber = (uint)(bytes[1] + (bytes[2] * 256) + (bytes[3] * 65536) + (bytes[4] * 16777216));
+        }
+        public NAMEkey(uint rcnm, uint rcid)
+        {
+            RecordName = rcnm;
             RecordIdentificationNumber = rcid;
         }
-        public bool Equals(VectorName other)
+        public bool Equals(NAMEkey other)
         {
-            return this.Type == other.Type && this.RecordIdentificationNumber == other.RecordIdentificationNumber;
+            return this.RecordName == other.RecordName && this.RecordIdentificationNumber == other.RecordIdentificationNumber;
         }
         public override bool Equals(object obj)
         {
@@ -21,11 +28,11 @@ namespace S57
             {
                 return false;
             }
-            return obj is VectorName && Equals((VectorName)obj);
+            return obj is NAMEkey && Equals((NAMEkey)obj);
         }
         public override int GetHashCode()
         {
-            return ((int)this.Type * 397) ^ (int)this.RecordIdentificationNumber;
+            return ((int)this.RecordName * 397) ^ (int)this.RecordIdentificationNumber;
         }
     }
 }

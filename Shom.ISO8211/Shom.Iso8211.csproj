@@ -62,6 +62,7 @@
     <Compile Include="Record.cs" />
     <Compile Include="RecordDirectory.cs" />
     <Compile Include="RecordLeader.cs" />
+    <Compile Include="SubField.cs" />
     <Compile Include="SubFieldDefinition.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
