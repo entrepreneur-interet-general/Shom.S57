@@ -35,8 +35,7 @@ namespace S57.File
             DataSetGeneralInformationRecord = reader.ReadDataRecord();
             var dsid = DataSetGeneralInformationRecord.Fields.GetFieldByTag("DSID");
             if (dsid != null)
-            {
-                
+            {                
                 IntendedUsage = dsid.subFields.GetUInt32(0, "INTU"); 
             }
             DataSetGeographicReferenceRecord = reader.ReadDataRecord();

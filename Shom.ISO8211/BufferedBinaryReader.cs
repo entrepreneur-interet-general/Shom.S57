@@ -76,7 +76,7 @@
             byte[] result = new byte[count];         
             int numRead = 0;
             int transfer;
-            if (NumBytesAvailable<count)
+            if (NumBytesAvailable<count && NumBytesAvailable< bufferSize)
                 FillBuffer();
             do
             {                
@@ -87,7 +87,8 @@
                 bufferOffset += transfer;
                 numRead += transfer;
                 count -= transfer;
-                FillBuffer();
+                if(count>NumBytesAvailable)//re-fill buffer, but only when needed
+                    FillBuffer();
             } while (NumBytesAvailable>0 && count > 0);
 
             if (numRead != result.Length)

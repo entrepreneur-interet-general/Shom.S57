@@ -13,12 +13,5 @@ namespace S57
             this.Values = ffpt.Values;
             FeatureList = new List<Feature>(); //consider intializing with 2 for speadup
         }
-    }
-    public class oldFeatureRecordPointer
-    {
-        public LongName LNAM;
-        public Relationship RIND;
-        public string Comment;
-        public oldFeature Feature;
-    }
+    }    
 }

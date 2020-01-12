@@ -22,12 +22,12 @@ namespace S57
         // FRID : Feature Record Identifier Field
         public NAMEkey namekey;
         public DataRecord FeatureRecord;
-        public Dictionary<uint, string> Attributes;     // ATTF Attributes
+        public Dictionary<S57Att, string> Attributes;     // ATTF Attributes
         public VectorRecordPointer enhVectorPtrs = null;
         public FeatureObjectPointer enhFeaturePtrs = null;
         public GeometricPrimitive Primitive;            // PRIM        // FOID : 
         public uint Group;                              // GRUP     
-        public uint Code;                               // OBJL
+        public uint ObjectCode;                         // OBJL
         public LongName lnam;                           // FOID Object Identifier Field
         // some private variables  
         uint agen;
@@ -189,7 +189,7 @@ namespace S57
             {
                 Primitive = (GeometricPrimitive)frid.subFields.GetUInt32(0, "PRIM");
                 Group = frid.subFields.GetUInt32(0, "GRUP");
-                Code = frid.subFields.GetUInt32(0, "OBJL");
+                ObjectCode = frid.subFields.GetUInt32(0, "OBJL");
             }
             // FOID : Feature Object Identifier
             var foid = _FeatureRecord.Fields.GetFieldByTag("FOID");
@@ -226,114 +226,5 @@ namespace S57
                 }
             }
         }
-    }
-    public class oldFeature
-    {
-        public BaseFile baseFile;
-        public Cell cell;
-
-        // FRID : Feature Record Identifier Field
-        public NAMEkey namekey;
-        public GeometricPrimitive Primitive;            // PRIM
-        public uint Group;                              // GRUP     
-        public uint Code;                               // OBJL
-
-
-        // FOID : 
-        public LongName lnam;                           // FOID Object Identifier Field
-        public Dictionary<uint, string> Attributes;     // ATTF Attributes
-        public List<oldFeatureRecordPointer> FeaturePtrs;      // <R> FFPT : Pointer Fields
-
-        // some private variables  
-        object[] subFieldRow;
-
-        public override string ToString()
-        {
-            return Code + " " + lnam.ToString();
-        }
-
-        //
-        // It might be necessary to go recursive on that one since a vector can be made of vectors...
-        //
-        //public double PositionAccuracy
-        //{
-        //    get {
-        //        if (_positionAccuracy == uint.MaxValue)
-        //        {
-        //            uint positionAccuracy = uint.MinValue;
-        //            foreach (var vectorPtr in enVectorPtrs)
-        //            {
-        //                var vector = vectorPtr.Vector;
-        //                var posaccCode = S57Attributes.Get("POSACC").Code;
-        //                if (vector.Attributes != null && vector.Attributes.ContainsKey(posaccCode))
-        //                {
-        //                    var sPosacc = vector.Attributes[posaccCode];
-        //                    double posacc = double.Parse(sPosacc, CultureInfo.InvariantCulture );
-        //                    if( posacc > positionAccuracy )
-        //                    {
-        //                        _positionAccuracy = posacc;
-        //                    }
-        //                }
-        //            }
-        //        }
-        //        if (_positionAccuracy == uint.MaxValue)
-        //        {
-        //            _positionAccuracy = 10; // by default, positionAccuracy = 10 m
-        //        }
-        //        return _positionAccuracy;
-        //    }
-        //}
-
-        //private double _positionAccuracy = uint.MaxValue;
-        //    // From Vector Attributes
-
-        //public string this[string i]                        // Attributes accessor thru acronym
-        //{
-        //    get
-        //    {
-        //        var attr = S57Attributes.Get(i);
-        //        if (attr == null || !Attributes.ContainsKey(attr.Code))
-        //        {
-        //            return null;
-        //        }
-        //        return Attributes[attr.Code];
-        //    }
-        //}        
-
-        public oldFeature(KeyValuePair<NAMEkey,DataRecord> frecord, BaseFile baseFile, Cell cell)
-        {
-            this.baseFile = baseFile;
-            this.cell = cell;
-            namekey = frecord.Key;        
-
-            // <R> FFPT : Feature Record To Feature Object Pointer
-            var ffpt = frecord.Value.Fields.GetFieldByTag("FFPT");
-            if (ffpt != null) FeaturePtrs = GetFFPTs( ffpt );
-
-
-        }
-
-        // Link to Feature Objects
-        public List<oldFeatureRecordPointer> GetFFPTs( DataField field )
-        {
-            if (field.Tag == "FFPT")
-            {
-                List<oldFeatureRecordPointer> result = new List<oldFeatureRecordPointer>();
-                int lnam = field.subFields.TagIndex["LNAM"];
-                int rind = field.subFields.TagIndex["RIND"];
-                int comt = field.subFields.TagIndex["COMT"];
-                for (int i = 0; i < field.subFields.Values.Count; i++)
-                {
-                    subFieldRow = field.subFields.Values[i];
-                    oldFeatureRecordPointer featureLink = new oldFeatureRecordPointer();
-                    featureLink.LNAM = new LongName(subFieldRow.GetBytes(lnam));
-                    featureLink.RIND = (Relationship)subFieldRow.GetUInt32(rind);
-                    featureLink.Comment = subFieldRow.GetString(comt);
-                    result.Add(featureLink);
-                }
-                return result;
-            }
-            else return null;
-        }
-    }
+    }   
 }

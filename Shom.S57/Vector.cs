@@ -24,7 +24,7 @@ namespace S57
     {
         public NAMEkey namekey;
         public DataRecord VectorRecord;
-        public Dictionary<uint, string> Attributes;
+        public Dictionary<S57Att, string> Attributes;
         public VectorRecordPointer enhVectorPtrs = null;
         public Geometry geometry;
         public List<SoundingData> SoundingList;
@@ -80,18 +80,18 @@ namespace S57
                 Attributes = GetAttributes(attv);
             }
         }
-        public static Dictionary<uint, string> GetAttributes(DataField field)
+        public static Dictionary<S57Att, string> GetAttributes(DataField field)
         {
             object[] subFieldRow;
             if (field.Tag == "ATTF" || field.Tag == "NATF" || field.Tag == "ATTV")
             {
-                Dictionary<uint, string> values = new Dictionary<uint, string>();
+                Dictionary<S57Att, string> values = new Dictionary<S57Att, string>();
                 int attl = field.subFields.TagIndex["ATTL"];
                 int atvl = field.subFields.TagIndex["ATVL"];
                 for (int i = 0; i < field.subFields.Values.Count; i++)
                 {
                     subFieldRow = field.subFields.Values[i];
-                    values.Add(subFieldRow.GetUInt32(attl), subFieldRow.GetString(atvl));
+                    values.Add((S57Att)subFieldRow.GetUInt32(attl), subFieldRow.GetString(atvl));
                 }
                 return values;
             }

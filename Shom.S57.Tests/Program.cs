@@ -20,29 +20,28 @@ namespace Shom.S57.Tests
             ZipArchive archive = ZipFile.OpenRead(zipPath);
             //reader.ReadCatalogue(S57map);
             //string MapName = "CATALOG.031";
+            //reader.ReadArchiveCatalogue(archive, MapName);
+
             //string MapName = "US5NC12M.000";
-            //string MapName = "US5NC18M.000";
-            string MapName = "US5NC51M.000";
+            string MapName = "US5NC18M.000";
+            //string MapName = "US5NC51M.000";
             reader.ReadFromArchive(archive, MapName, true);
             archive.Dispose();
 
-            //string path = args[0];
-
             //reader.Read(new FileStream(path, FileMode.Open));
-            //ListFeatures(reader);
+            ListFeatures(reader);
             //PolygonSet TempSet;
-            //var features = reader.GetFeaturesOfClass(S57Objects.DEPARE);
+            //var features = reader.GetFeaturesOfClass(S57Obj.DEPARE);
             //for (int i = 0; i < features.Count; i++)
             //{
             //    //if (features[i].namekey.RecordIdentificationNumber == 6163)
             //    //{
-            //        if (features[i].Primitive == GeometricPrimitive.Area)
-            //        {
-            //            TempSet = features[i].GetGeometry() as PolygonSet;
-            //        }
+            //    if (features[i].Primitive == GeometricPrimitive.Area)
+            //    {
+            //        TempSet = features[i].GetGeometry() as PolygonSet;
+            //    }
             //    //}
             //}
-
             //var test1 = features.First(x => x.RecordName == 6140u);
             //var test2 = features.First(x => x.RecordName == 6140u).GetGeometry() as PolygonSet;
             //var test1 = features.First(x => x.RecordName == 6156u);
@@ -81,19 +80,16 @@ namespace Shom.S57.Tests
             Console.ReadKey();
 
         }
-                         
+                        
 		private static void ListFeatures(S57Reader reader)
         {
-            for (uint i = 1; i < 500; i++)
+            foreach (var obj in S57ObjectInfo.S57Dict)
             {
-                if (S57Objects.IsIn(i))
+                int a = reader.GetFeaturesOfClass(obj.Key).Count;
+                string test = obj.Key.ToString();
+                if (a > 0)
                 {
-                    int a = reader.GetFeaturesOfClass(i).Count;
-                    string test = S57Objects.Get(i).Acronym.ToString();
-                    if (a > 0)
-                    {
-                        Console.WriteLine(test + ": " + "{0:G}", a.ToString());
-                    }
+                    Console.WriteLine(test + ": " + "{0:G}", a.ToString());
                 }
             }
         }

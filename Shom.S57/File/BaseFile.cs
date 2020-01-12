@@ -20,9 +20,12 @@ namespace S57.File
         public DataRecord DataSetGeneralInformationRecord = null;
         public DataRecord DataSetGeographicReferenceRecord = null;
 
-        public Dictionary<NAMEkey, Feature> eFeatureRecords; //consider using lnam as key
+        //2 dictinaries using either NAMEKey or LongName to point to a given value
+        //reasons: features are referenced via LongName, update files referenced using NAMEKey
+        private Dictionary<NAMEkey, Feature> eFeatureRecords; 
         public Dictionary<LongName, Feature> eFeatureObjects;
-        public Dictionary<NAMEkey, Vector> eVectorRecords;
+
+        private Dictionary<NAMEkey, Vector> eVectorRecords;
 
         // DSSI
         public VectorDataStructure vectorDataStructure;
@@ -128,7 +131,8 @@ namespace S57.File
                         frid = nextRec.Fields.GetFieldByTag("FRID");
                         rcnm = frid.subFields.GetUInt32(0, "RCNM");
                         rcid = frid.subFields.GetUInt32(0, "RCID");
-                        var key = new NAMEkey(rcnm, rcid); //consider using lnam as key
+                        //consider using lnam as key (from FOID field), challenge: update files deleting a feature record do not encode lnam of that feature record
+                        var key = new NAMEkey(rcnm, rcid); 
                         Feature newFeat = new Feature(key, nextRec);
                         eFeatureRecords.Add(key, newFeat);
                     }
@@ -170,7 +174,8 @@ namespace S57.File
         }
         public void BindFeatureObjectPointers()
         {
-            //copy all features in new dictionary keyed by lnam
+            //features in eFeatureRecords are keyed by NAMEkey. create new dictionary to key them via LongName
+            //essential to speadup Feature lookup because Features are linked via LongName
             foreach (var eFeat in eFeatureRecords)
             {
                 eFeatureObjects.Add(eFeat.Value.lnam, eFeat.Value);
@@ -188,17 +193,32 @@ namespace S57.File
                     }
                 }
             }
-            var test = new Dictionary<LongName, Feature>();
-            foreach (var eFeat in eFeatureObjects)
-            {
-                if (eFeat.Value.enhFeaturePtrs != null)
-                {
-                    if (eFeat.Value.enhFeaturePtrs.FeatureList.Count > 0)
-                    {
-                        test.Add(eFeat.Value.lnam, eFeat.Value);
-                    }
-                }
-            }
+            //var test = new Dictionary<LongName, Feature>();
+            //int cc = 0;
+            //foreach (var eFeat in eFeatureObjects)
+            //{
+            //    cc++;
+            //    if (eFeat.Value.enhFeaturePtrs != null)
+            //    {
+            //        if (eFeat.Value.enhFeaturePtrs.FeatureList.Count > 0)
+            //        {
+            //            test.Add(eFeat.Value.lnam, eFeat.Value);
+            //            string testname = ((S57Obj)(eFeat.Value.ObjectCode)).ToString();
+            //            string name = eFeat.Key.FeatureIdentificationNumber.ToString();
+            //            string pointername = null;
+            //            int counter = 0;
+            //            foreach (var bla in eFeat.Value.enhFeaturePtrs.FeatureList)
+            //            {
+            //                string relationship = ((Relationship)eFeat.Value.FeatureRecord.Fields.GetFieldByTag("FFPT").subFields.GetUInt32(counter++, "RIND")).ToString();
+            //                //string targetrelationship = ((Relationship)bla.FeatureRecord.Fields.GetFieldByTag("FFPT").subFields.GetUInt32(0, "RIND")).ToString();
+            //                string targettype = ((S57Obj)(bla.ObjectCode)).ToString();
+            //                string targetname = bla.lnam.FeatureIdentificationNumber.ToString();
+            //                pointername = pointername + targetname + "." + targettype + "." + relationship + " ";
+            //            }
+            //            Console.WriteLine(name + " " + testname + " " + pointername);
+            //        }
+            //    }
+            //}
         }
         public void BuildVectorGeometry()
         {
@@ -221,7 +241,6 @@ namespace S57.File
                 }                
             }
         }
-
         private void ExtractGeometry(KeyValuePair<NAMEkey, Vector> eVec)
         {
             var sg2d = eVec.Value.VectorRecord.Fields.GetFieldByTag("SG2D");
@@ -256,7 +275,6 @@ namespace S57.File
                 }
             }
         }
-
         private Point GetNodeGeometry(DataField sg2d)
         {
             Point point = new Point();
@@ -267,13 +285,12 @@ namespace S57.File
             point.X = subFieldRow.GetDouble(xcoo) / coordinateMultiplicationFactor;
             return point;
         }
-
         private Line GetFaceGeometry(KeyValuePair<NAMEkey, Vector> _eVec, DataField sg2d)
         {
             Line line = new Line();
             int ycoo = sg2d.subFields.TagIndex["YCOO"];
             int xcoo = sg2d.subFields.TagIndex["XCOO"];
-            line.points.Add(_eVec.Value.enhVectorPtrs.VectorList[0].geometry as Point); //bug: will fail when geometry of pointed Vector has not been calculated yet
+            line.points.Add(_eVec.Value.enhVectorPtrs.VectorList[0].geometry as Point); //will fail when geometry of pointed Vector has not been calculated yet
             for (int i = 0; i < sg2d.subFields.Values.Count; i++)
             {
                 var point = new Point();
@@ -285,7 +302,6 @@ namespace S57.File
             line.points.Add(_eVec.Value.enhVectorPtrs.VectorList[1].geometry as Point);
             return line;
         }
-
         public void ApplyUpdateFile(UpdateFile updateFile)
         {
             DataField target_vrid, target_frid;
@@ -325,25 +341,19 @@ namespace S57.File
                 rver = subFieldRow.GetUInt32(tagLookup["RVER"]);
                 ruin = (RecordUpdate)subFieldRow.GetUInt32(tagLookup["RUIN"]);
                 NAMEkey updateNAMEkey = new NAMEkey(rcnm, rcid);
-                //if (updateNAMEkey.RecordIdentificationNumber == 4983 && updateNAMEkey.Type == 120)
-                //{ }
                 if (ruin == RecordUpdate.Insert)
                 {
-                    //VectorRecords.Add(updateNAMEkey, vr);
                     Vector newVec = new Vector(updateNAMEkey, vr);
                     eVectorRecords.Add(updateNAMEkey, newVec);
-
                 }
                 else
                 {
-                    //target_vrid = VectorRecords[updateNAMEkey].Fields.GetFieldByTag("VRID");
                     target_vrid = eVectorRecords[updateNAMEkey].VectorRecord.Fields.GetFieldByTag("VRID");
                     target_rver = target_vrid.subFields.GetUInt32(0, "RVER");
                     if (ruin == RecordUpdate.Delete)
                     {
                         if (target_rver == rver - 1)
                         {
-                            //VectorRecords.Remove(updateNAMEkey);
                             eVectorRecords.Remove(updateNAMEkey);
                         }
                     }
@@ -396,7 +406,6 @@ namespace S57.File
                             vpix = (int)vrpc.subFields.GetUInt32(0, "VPIX") - 1; //c sharp indices start at 0 while S57 indices start at 1
                             nvpt = (int)vrpc.subFields.GetUInt32(0, "NVPT"); //number of vector record pointers to patch
                             vrpt = vr.Fields.GetFieldByTag("VRPT");
-                            //target_vrpt = VectorRecords[updateNAMEkey].Fields.GetFieldByTag("VRPT");
                             target_vrpt = eVectorRecords[updateNAMEkey].VectorRecord.Fields.GetFieldByTag("VRPT");
                             if (vpui == RecordUpdate.Insert)
                             {
@@ -436,12 +445,10 @@ namespace S57.File
                             ccix = (int)sgcc.subFields.GetUInt32(0, "CCIX") - 1; //c sharp indices start at 0 while S57 indices start at 1
                             ccnc = (int)sgcc.subFields.GetUInt32(0, "CCNC"); //number of vector record pointers to patch
                             coordinatefield = vr.Fields.GetFieldByTag("SG2D");
-                            //target_coordinatefield = VectorRecords[updateNAMEkey].Fields.GetFieldByTag("SG2D");
                             target_coordinatefield = eVectorRecords[updateNAMEkey].VectorRecord.Fields.GetFieldByTag("SG2D");
                             if (target_coordinatefield == null)
                             {
                                 coordinatefield = vr.Fields.GetFieldByTag("SG3D");
-                                //target_coordinatefield = VectorRecords[updateNAMEkey].Fields.GetFieldByTag("SG3D");
                                 target_coordinatefield = eVectorRecords[updateNAMEkey].VectorRecord.Fields.GetFieldByTag("SG3D");
                             }
                             if (ccui == RecordUpdate.Insert)
@@ -489,26 +496,19 @@ namespace S57.File
                 rver = subFieldRow.GetUInt32(tagLookup["RVER"]);
                 ruin = (RecordUpdate)subFieldRow.GetUInt32(tagLookup["RUIN"]);
                 NAMEkey updateNAMEkey = new NAMEkey(rcnm, rcid);
-                if (rcid == 264 && rcnm == 100)
-                {
-                    var target = eFeatureRecords[updateNAMEkey];
-                }
                 if (ruin == RecordUpdate.Insert)
                 {
-                    //FeatureRecords.Add(updateNAMEkey, fr);
                     Feature newFeat = new Feature(updateNAMEkey, fr);
                     eFeatureRecords.Add(updateNAMEkey, newFeat);
                 }
                 else
                 {
-                    //target_frid = FeatureRecords[updateNAMEkey].Fields.GetFieldByTag("FRID");
                     target_frid = eFeatureRecords[updateNAMEkey].FeatureRecord.Fields.GetFieldByTag("FRID");
                     target_rver = target_frid.subFields.GetUInt32(0, "RVER");
                     if (ruin == RecordUpdate.Delete)
                     {
                         if (target_rver == rver - 1)
                         {
-                            //FeatureRecords.Remove(updateNAMEkey);
                             eFeatureRecords.Remove(updateNAMEkey);
                         }
 
@@ -562,7 +562,6 @@ namespace S57.File
                             ffix = (int)ffpc.subFields.GetUInt32(0, "FFIX") - 1; //c sharp indices start at 0 while S57 indices start at 1
                             nfpt = (int)ffpc.subFields.GetUInt32(0, "NFPT"); //number of vector record pointers to patch
                             ffpt = fr.Fields.GetFieldByTag("FFPT");
-                            //target_ffpt = FeatureRecords[updateNAMEkey].Fields.GetFieldByTag("FFPT");
                             target_ffpt = eFeatureRecords[updateNAMEkey].FeatureRecord.Fields.GetFieldByTag("FFPT");
                             var target = eFeatureRecords[updateNAMEkey];
                             if (ffui == RecordUpdate.Insert) 
@@ -603,7 +602,6 @@ namespace S57.File
                             fsix = (int)fspc.subFields.GetUInt32(0, "FSIX") - 1; //c sharp indices start at 0 while S57 indices start at 1
                             nspt = (int)fspc.subFields.GetUInt32(0, "NSPT"); //number of vector record pointers to patch
                             fspt = fr.Fields.GetFieldByTag("FSPT");
-                            //target_fspt = FeatureRecords[updateNAMEkey].Fields.GetFieldByTag("FSPT");
                             target_fspt = eFeatureRecords[updateNAMEkey].FeatureRecord.Fields.GetFieldByTag("FSPT");
                             if (fsui == RecordUpdate.Insert)
                             {
@@ -638,9 +636,6 @@ namespace S57.File
                     }
                 }
             }
-            //BindVectorPointersOfVectors();
-            //BindVectorPointersOfFeatures();
-            //BuildVectorGeometry();
         }
     }
 }

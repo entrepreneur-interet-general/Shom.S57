@@ -25,18 +25,6 @@ namespace S57
         public Dictionary<uint, Catalogue> ExchangeSetFiles = new Dictionary<uint, Catalogue>();
         public Dictionary<uint, Catalogue> BaseFiles = new Dictionary<uint, Catalogue>();
 
-        //private Feature FindFeatureByLnam(LongName lnam)
-        //{
-        //    if (Features.ContainsKey(lnam))
-        //    {
-        //        return Features[lnam];
-        //    }
-        //    else
-        //    {
-        //        return null;
-        //    }
-        //}
-
         public void ReadCatalogue(System.IO.Stream stream)
         {
             using (var reader = new Iso8211Reader(stream))
@@ -52,6 +40,30 @@ namespace S57
             {
                 productInfo = new ProductInfo(reader);
             }
+        }
+
+        public void ReadArchiveCatalogue(ZipArchive archive, string MapName)
+        {
+            string basename = MapName.Remove(MapName.Length - 4);
+            Stream S57map = null;
+            ZipArchiveEntry catalogueentry = null;
+            foreach (ZipArchiveEntry entry in archive.Entries)
+            {
+                if (entry.Name.Contains(basename))
+                {
+                    if (entry.Name.Equals(MapName))
+                    {
+                        catalogueentry = entry;
+                    }                    
+                }
+            }
+            S57map = catalogueentry.Open();
+            using (var reader = new Iso8211Reader(S57map))
+            {
+                catalogueFile = new CatalogueFile(reader);
+                BuildCatalogue();
+            }
+            S57map.Dispose();            
         }
 
         public void ReadFromArchive(ZipArchive archive, string MapName, bool ApplyUpdates)
@@ -83,7 +95,6 @@ namespace S57
                     }
                 }
             }
-            //Stream S57map = archive.GetEntry(MapName).Open();
             S57map = baseentry.Open();
             using (var reader = new Iso8211Reader(S57map))
             {
@@ -93,12 +104,10 @@ namespace S57
             //timer.Stop();
             //Console.WriteLine(((double)(timer.Elapsed.TotalMilliseconds)).ToString("0.00 ms"));
             //timer.Start();
-            //for (uint i =1; i<updatefiles.Count+1; i++)
             if (ApplyUpdates)
             {
                 foreach (var entry in updatefiles)
                 {
-                    //S57update = updatefiles[i].Open();
                     S57update = entry.Value.Open();
                     using (var updatereader = new Iso8211Reader(S57update))
                     {
@@ -116,6 +125,7 @@ namespace S57
             baseFile.BindVectorPointersOfVectors();
             baseFile.BindVectorPointersOfFeatures();
             baseFile.BuildVectorGeometry();
+            baseFile.BindFeatureObjectPointers();
         }
 
         public void Read(System.IO.Stream stream)
@@ -133,27 +143,10 @@ namespace S57
             baseFile.BindVectorPointersOfVectors();
             baseFile.BindVectorPointersOfFeatures();
             baseFile.BuildVectorGeometry();
-            //baseFile.BindFeatureObjectPointers();
+            baseFile.BindFeatureObjectPointers();
             //timer.Stop();
             //Console.WriteLine(((double)(timer.Elapsed.TotalMilliseconds)).ToString("0.00 ms"));
-        }
-
-        //private void UpdateFeaturePtrs(oldFeature feature)
-        //{
-        //    if (feature.FeaturePtrs != null)
-        //    {
-        //        foreach (var featurePtr in feature.FeaturePtrs)
-        //        {
-        //            if (featurePtr.Feature == null)
-        //            {
-        //                if (oldFeatures.ContainsKey(featurePtr.LNAM))
-        //                {
-        //                    featurePtr.Feature = oldFeatures[featurePtr.LNAM];
-        //                }
-        //            }
-        //        }
-        //    }
-        //}        
+        }    
 
         private void BuildCatalogue()
         {
@@ -173,40 +166,27 @@ namespace S57
             }
         }
 
-        public List<Feature> GetFeaturesOfClass(string acronym)
-        {
-            return GetFeaturesOfClass(S57Objects.Get(acronym).Code);
-        }
-        public List<Feature> GetFeaturesOfClass(uint code)
+        public List<Feature> GetFeaturesOfClass(S57Obj ObjectCode)
         {
             List<Feature> tempList = new List<Feature>();
-            foreach (var feat in baseFile.eFeatureRecords)
+            //foreach (var feat in baseFile.eFeatureRecords)
+            foreach (var feat in baseFile.eFeatureObjects)
             {
-                if (feat.Value.Code == code)
+                if (feat.Value.ObjectCode == (uint)ObjectCode)
                     tempList.Add(feat.Value);
             }
             return tempList;
         }
 
-        public List<Feature> GetFeaturesOfClasses(string[] acronyms)
-        {
-            List<uint> codes = new List<uint>();
-            foreach (var acronym in acronyms)
-            {
-                uint code = S57Objects.Get(acronym).Code;
-                codes.Add(code);
-            }
-            return GetFeaturesOfClasses(codes.ToArray());
-        }
-
-        public List<Feature> GetFeaturesOfClasses(uint[] codes)
+        public List<Feature> GetFeaturesOfClasses(S57Obj[] ObjectCodes)
         {
             List<Feature> tempList = new List<Feature>();
-            foreach (var feat in baseFile.eFeatureRecords)
+            //foreach (var feat in baseFile.eFeatureRecords)
+            foreach (var feat in baseFile.eFeatureObjects)
             {
-                foreach (var code in codes)
+                foreach (var ObjectCode in ObjectCodes)
                 {
-                    if (code == feat.Value.Code)
+                    if ((uint)ObjectCode == feat.Value.ObjectCode)
                         tempList.Add(feat.Value);
                 }
             }
