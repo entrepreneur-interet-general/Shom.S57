@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using S57;
+using Shom.ISO8211;
 
 namespace Shom.S57.Tests
 {
@@ -22,14 +23,16 @@ namespace Shom.S57.Tests
             //string MapName = "CATALOG.031";
             //reader.ReadArchiveCatalogue(archive, MapName);
 
-            //string MapName = "US5NC12M.000";
-            string MapName = "US5NC18M.000";
+            string MapName = "US5NC12M.000";
+            //string MapName = "US5NC18M.000";
             //string MapName = "US5NC51M.000";
             reader.ReadFromArchive(archive, MapName, true);
             archive.Dispose();
+            ListRelationships(reader, S57Obj.BCNLAT);
+
 
             //reader.Read(new FileStream(path, FileMode.Open));
-            ListFeatures(reader);
+            //ListFeatures(reader);
             //PolygonSet TempSet;
             //var features = reader.GetFeaturesOfClass(S57Obj.DEPARE);
             //for (int i = 0; i < features.Count; i++)
@@ -80,7 +83,30 @@ namespace Shom.S57.Tests
             Console.ReadKey();
 
         }
-                        
+        private static void ListRelationships(S57Reader reader, S57Obj type)
+        {
+            var features = reader.GetFeaturesOfClass(type);
+            for (int i = 0; i < features.Count; i++)
+            {
+                string description = null;
+                features[i].Attributes.TryGetValue(S57Att.OBJNAM, out description);
+                string rcid = features[i].namekey.RecordIdentificationNumber.ToString();
+                string targetinfo = null;
+                int counter = 0;
+                if (features[i].enhFeaturePtrs != null)
+                {
+                    foreach (var bla in features[i].enhFeaturePtrs.FeatureList)
+                    {
+                        string relationship = ((Relationship)features[i].FeatureRecord.Fields.GetFieldByTag("FFPT").subFields.GetUInt32(counter++, "RIND")).ToString();
+                        string targettype = ((S57Obj)(bla.ObjectCode)).ToString();
+                        string targetname = bla.namekey.RecordIdentificationNumber.ToString();
+                        targetinfo = targetinfo + " |" + targetname + "." + targettype + "." + relationship;
+                    }
+                }
+                Console.WriteLine(rcid + "." + description + targetinfo);
+            }
+        }
+        
 		private static void ListFeatures(S57Reader reader)
         {
             foreach (var obj in S57ObjectInfo.S57Dict)

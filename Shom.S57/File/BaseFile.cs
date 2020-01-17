@@ -203,19 +203,23 @@ namespace S57.File
             //        if (eFeat.Value.enhFeaturePtrs.FeatureList.Count > 0)
             //        {
             //            test.Add(eFeat.Value.lnam, eFeat.Value);
-            //            string testname = ((S57Obj)(eFeat.Value.ObjectCode)).ToString();
-            //            string name = eFeat.Key.FeatureIdentificationNumber.ToString();
-            //            string pointername = null;
+            //            string type = ((S57Obj)(eFeat.Value.ObjectCode)).ToString();
+            //            //string name = eFeat.Key.FeatureIdentificationNumber.ToString();
+            //            string rcid = eFeat.Value.namekey.RecordIdentificationNumber.ToString();
+            //            string description = null;
+            //            eFeat.Value.Attributes.TryGetValue(S57Att.OBJNAM, out description);
+            //            string targetinfo = null;
             //            int counter = 0;
             //            foreach (var bla in eFeat.Value.enhFeaturePtrs.FeatureList)
             //            {
             //                string relationship = ((Relationship)eFeat.Value.FeatureRecord.Fields.GetFieldByTag("FFPT").subFields.GetUInt32(counter++, "RIND")).ToString();
             //                //string targetrelationship = ((Relationship)bla.FeatureRecord.Fields.GetFieldByTag("FFPT").subFields.GetUInt32(0, "RIND")).ToString();
             //                string targettype = ((S57Obj)(bla.ObjectCode)).ToString();
-            //                string targetname = bla.lnam.FeatureIdentificationNumber.ToString();
-            //                pointername = pointername + targetname + "." + targettype + "." + relationship + " ";
+            //                //string targetname = bla.lnam.FeatureIdentificationNumber.ToString();
+            //                string targetname = bla.namekey.RecordIdentificationNumber.ToString();
+            //                targetinfo = targetinfo + targetname + "." + targettype + "." + relationship + " ";
             //            }
-            //            Console.WriteLine(name + " " + testname + " " + pointername);
+            //            Console.WriteLine(rcid + " " + type + " " + description + targetinfo);
             //        }
             //    }
             //}
@@ -309,6 +313,8 @@ namespace S57.File
             uint rver, target_rver;
 
             DataField attv, target_attv;
+            DataField attf, target_attf;
+            DataField natf, target_natf;
             bool attribute_found = false;
 
             DataField vrpt, target_vrpt, vrpc;
@@ -364,7 +370,6 @@ namespace S57.File
                         {
                             int atvl, target_atvl;
                             int attl, target_attl;
-                            attribute_found = false;
                             target_attv = eVectorRecords[updateNAMEkey].VectorRecord.Fields.GetFieldByTag("ATTV");
                             if (target_attv == null)
                             {
@@ -378,10 +383,11 @@ namespace S57.File
                                 target_atvl = target_attv.subFields.TagIndex["ATVL"];
                                 foreach (var row in attv.subFields.Values)
                                 {
+                                    attribute_found = false;
                                     for (int i = 0; i < target_attv.subFields.Values.Count; i++)
                                     {
                                         target_row = target_attv.subFields.Values[i];
-                                        if (target_row[target_attl] == row[attl]) //if attribute found, overwrite value
+                                        if (target_row[target_attl].Equals(row[attl])) //if attribute found, overwrite value
                                         {
                                             target_attv.subFields.Values[i][target_atvl] = row[atvl];
                                             attribute_found = true;
@@ -391,8 +397,6 @@ namespace S57.File
                                     if (!attribute_found)
                                     {
                                         target_attv.subFields.Values.Add(row); //risky, assumes same indices of ATTL and ATVl in source and target
-                                        if (target_attl != attl || target_atvl != atvl) //checked this possibility
-                                        { }
                                     }
                                 }
                             }
@@ -515,40 +519,74 @@ namespace S57.File
                     }
                     else if (ruin == RecordUpdate.Modify)
                     {
-                        attv = fr.Fields.GetFieldByTag("ATTV"); //attribute update not tested
-                        if (attv != null && target_rver == rver - 1)
+                        attf = fr.Fields.GetFieldByTag("ATTF"); //attribute update not tested
+                        if (attf != null && target_rver == rver - 1)
                         {
                             int atvl, target_atvl;
                             int attl, target_attl;
-                            attribute_found = false;
-                            target_attv = eFeatureRecords[updateNAMEkey].FeatureRecord.Fields.GetFieldByTag("ATTV");
-                            if (target_attv == null)
+                            target_attf = eFeatureRecords[updateNAMEkey].FeatureRecord.Fields.GetFieldByTag("ATTF");
+                            if (target_attf == null)
                             {
-                                eFeatureRecords[updateNAMEkey].FeatureRecord.Fields.Add(attv);
+                                eFeatureRecords[updateNAMEkey].FeatureRecord.Fields.Add(attf);
                             }
                             else
                             {
-                                attl = attv.subFields.TagIndex["ATTL"];
-                                target_attl = target_attv.subFields.TagIndex["ATTL"];
-                                atvl = attv.subFields.TagIndex["ATVL"];
-                                target_atvl = target_attv.subFields.TagIndex["ATVL"];
-                                foreach (var row in attv.subFields.Values)
+                                attl = attf.subFields.TagIndex["ATTL"];
+                                target_attl = target_attf.subFields.TagIndex["ATTL"];
+                                atvl = attf.subFields.TagIndex["ATVL"];
+                                target_atvl = target_attf.subFields.TagIndex["ATVL"];
+                                foreach (var row in attf.subFields.Values)
                                 {
-                                    for (int i = 0; i < target_attv.subFields.Values.Count; i++)
+                                    attribute_found = false;
+                                    for (int i = 0; i < target_attf.subFields.Values.Count; i++)
                                     {
-                                        target_row = target_attv.subFields.Values[i];
-                                        if (target_row[target_attl] == row[attl]) //if attribute found, overwrite value
+                                        target_row = target_attf.subFields.Values[i];
+                                        if (target_row[target_attl].Equals(row[attl])) //if attribute found, overwrite value
                                         {
-                                            target_attv.subFields.Values[i][target_atvl] = row[atvl];
+                                            target_attf.subFields.Values[i][target_atvl] = row[atvl];
                                             attribute_found = true;
                                             break;
                                         }
                                     }
                                     if (!attribute_found)
                                     {
-                                        target_attv.subFields.Values.Add(row); //risky, assumes same indices of ATTL and ATVl in source and target
-                                        if (target_attl != attl || target_atvl != atvl) //checked this possibility
-                                        { }
+                                        target_attf.subFields.Values.Add(row); //risky, assumes same indices of ATTL and ATVl in source and target
+                                    }
+                                }
+                            }
+                        }
+                        natf = fr.Fields.GetFieldByTag("NATF"); //attribute update not tested
+                        if (natf != null && target_rver == rver - 1)
+                        {
+                            int atvl, target_atvl;
+                            int attl, target_attl;
+                            target_natf = eFeatureRecords[updateNAMEkey].FeatureRecord.Fields.GetFieldByTag("NATF");
+                            if (target_natf == null)
+                            {
+                                eFeatureRecords[updateNAMEkey].FeatureRecord.Fields.Add(natf);
+                            }
+                            else
+                            {
+                                attl = natf.subFields.TagIndex["ATTL"];
+                                target_attl = target_natf.subFields.TagIndex["ATTL"];
+                                atvl = natf.subFields.TagIndex["ATVL"];
+                                target_atvl = target_natf.subFields.TagIndex["ATVL"];
+                                foreach (var row in natf.subFields.Values)
+                                {
+                                    attribute_found = false;
+                                    for (int i = 0; i < target_natf.subFields.Values.Count; i++)
+                                    {
+                                        target_row = target_natf.subFields.Values[i];
+                                        if (target_row[target_attl].Equals(row[attl])) //if attribute found, overwrite value
+                                        {
+                                            target_natf.subFields.Values[i][target_atvl] = row[atvl];
+                                            attribute_found = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!attribute_found)
+                                    {
+                                        target_natf.subFields.Values.Add(row); //risky, assumes same indices of ATTL and ATVl in source and target
                                     }
                                 }
                             }

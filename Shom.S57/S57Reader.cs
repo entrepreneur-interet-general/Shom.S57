@@ -172,7 +172,7 @@ namespace S57
             //foreach (var feat in baseFile.eFeatureRecords)
             foreach (var feat in baseFile.eFeatureObjects)
             {
-                if (feat.Value.ObjectCode == (uint)ObjectCode)
+                if (feat.Value.ObjectCode == ObjectCode)
                     tempList.Add(feat.Value);
             }
             return tempList;
@@ -186,7 +186,7 @@ namespace S57
             {
                 foreach (var ObjectCode in ObjectCodes)
                 {
-                    if ((uint)ObjectCode == feat.Value.ObjectCode)
+                    if (ObjectCode == feat.Value.ObjectCode)
                         tempList.Add(feat.Value);
                 }
             }

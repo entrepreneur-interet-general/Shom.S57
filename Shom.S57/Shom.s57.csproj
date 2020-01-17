@@ -74,7 +74,6 @@
     <Compile Include="Geometry\Point.cs" />
     <Compile Include="Geometry\Polygonset.cs" />
     <Compile Include="LongName.cs" />
-    <Compile Include="ObjectClassInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RecordName.cs" />
     <Compile Include="S57AttributeInfo.cs" />

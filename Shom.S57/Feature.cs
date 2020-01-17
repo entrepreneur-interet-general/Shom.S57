@@ -27,7 +27,7 @@ namespace S57
         public FeatureObjectPointer enhFeaturePtrs = null;
         public GeometricPrimitive Primitive;            // PRIM        // FOID : 
         public uint Group;                              // GRUP     
-        public uint ObjectCode;                         // OBJL
+        public S57Obj ObjectCode;                         // OBJL
         public LongName lnam;                           // FOID Object Identifier Field
         // some private variables  
         uint agen;
@@ -189,7 +189,7 @@ namespace S57
             {
                 Primitive = (GeometricPrimitive)frid.subFields.GetUInt32(0, "PRIM");
                 Group = frid.subFields.GetUInt32(0, "GRUP");
-                ObjectCode = frid.subFields.GetUInt32(0, "OBJL");
+                ObjectCode = (S57Obj)frid.subFields.GetUInt32(0, "OBJL");
             }
             // FOID : Feature Object Identifier
             var foid = _FeatureRecord.Fields.GetFieldByTag("FOID");
