@@ -41,22 +41,17 @@ namespace Shom.ISO8211
 
         public DataRecord ReadDataRecord()
         {
-            //this does not work with stream having unknown lengths or position (e.g. opening file directly from ZIP archive)
-            //if (Reader.BaseStream.Position >= Reader.BaseStream.Length) 
-            //{
-            //    return null;
-            //}
-
             var rec = new DataRecord();
             readRecord = bufferedReader.ReadBytes(sizeOfRecordLeader);
             if (readRecord.Length < sizeOfRecordLeader)  //detect  stream end when readbytes returns 0 works with stream of known length (e.g. files) and unknown length
                 return null;
             else
+            {
                 rec.Leader = ReadRecordLeader(readRecord);
-            rec.Directory = ReadRecordDirectory(rec.Leader);
-            rec.Fields = ReadDataRecordFields(rec.Leader, rec.Directory);
-
-            return rec;
+                rec.Directory = ReadRecordDirectory(rec.Leader);
+                rec.Fields = ReadDataRecordFields(rec.Leader, rec.Directory);
+                return rec;
+            }
         }
 
         private RecordLeader ReadRecordLeader(byte[] readRecord)
@@ -168,6 +163,7 @@ namespace Shom.ISO8211
                 {
                     throw new Exception("Unable to find data descriptive field");
                 }
+
                 var df = new DataField(entry.FieldTag, (DataDescriptiveField)dataDescriptiveField, bufferedReader.ReadBytes(entry.FieldLength));
 
                 fieldArea.Add(df);

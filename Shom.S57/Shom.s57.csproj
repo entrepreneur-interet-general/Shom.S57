@@ -33,6 +33,8 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -45,11 +47,13 @@
     <Compile Include="BoundingBox.cs" />
     <Compile Include="Cell.cs" />
     <Compile Include="Catalogue.cs" />
+    <Compile Include="Enums\S57Attributes.cs" />
     <Compile Include="Datum.cs" />
     <Compile Include="Enums\Boundary.cs" />
     <Compile Include="Enums\CoordinateUnits.cs" />
     <Compile Include="Enums\GenericPrimitive.cs" />
     <Compile Include="Enums\Masking.cs" />
+    <Compile Include="Enums\S57Objects.cs" />
     <Compile Include="Enums\Orientation.cs" />
     <Compile Include="Enums\RecordUpdate.cs" />
     <Compile Include="Enums\Relationship.cs" />
@@ -70,12 +74,10 @@
     <Compile Include="Geometry\Point.cs" />
     <Compile Include="Geometry\Polygonset.cs" />
     <Compile Include="LongName.cs" />
-    <Compile Include="Name.cs" />
-    <Compile Include="ObjectClassInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RecordName.cs" />
-    <Compile Include="S57Attribute.cs" />
-    <Compile Include="S57Object.cs" />
+    <Compile Include="S57AttributeInfo.cs" />
+    <Compile Include="S57ObjectInfo.cs" />
     <Compile Include="S57Reader.cs" />
     <Compile Include="SoundingData.cs" />
     <Compile Include="Vector.cs" />

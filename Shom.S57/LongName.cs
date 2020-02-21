@@ -10,20 +10,10 @@ namespace S57
         public LongName(byte[] bytes)
         {
             if (bytes.Length != 8)
-            {
                 throw new ArgumentException("Expected byte array with 8 items");
-            }
-
-            ProducingAgency = +(uint)(bytes[1] << 8)
-                              + (uint)(bytes[0]);
-
-            FeatureIdentificationNumber = (uint)(bytes[5] << 24)
-                                        + (uint)(bytes[4] << 16)
-                                        + (uint)(bytes[3] << 8)
-                                        + (uint)(bytes[2]);
-
-            FeatureIdentificationSubdivision = +(uint)(bytes[7] << 8)
-                                               + (uint)(bytes[6]);
+            ProducingAgency = (uint)(bytes[0] + (bytes[1] * 256));
+            FeatureIdentificationNumber = (uint)(bytes[2] + (bytes[3] * 256) + (bytes[4] * 65536) + (bytes[5] * 16777216));
+            FeatureIdentificationSubdivision = (uint)(bytes[6] + (bytes[7] * 256));
         }
 
         public LongName(uint agen, uint fidn, uint fids)

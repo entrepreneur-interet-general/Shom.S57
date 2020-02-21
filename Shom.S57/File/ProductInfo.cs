@@ -26,31 +26,36 @@ namespace S57.File
         public uint verticalDatum;
         public uint soundingDatum;
 
+        // some private variables  
+        object[] subFieldRow;
+        Dictionary<string, int> tagLookup;
 
         public ProductInfo(Iso8211Reader reader)
         {
             DataSetGeneralInformationRecord = reader.ReadDataRecord();
             var dsid = DataSetGeneralInformationRecord.Fields.GetFieldByTag("DSID");
             if (dsid != null)
-            {
-                IntendedUsage = dsid.GetUInt32("INTU");
+            {                
+                IntendedUsage = dsid.subFields.GetUInt32(0, "INTU"); 
             }
-                DataSetGeographicReferenceRecord = reader.ReadDataRecord();
+            DataSetGeographicReferenceRecord = reader.ReadDataRecord();
             var dspm = DataSetGeographicReferenceRecord.Fields.GetFieldByTag("DSPM");
             if (dspm != null)
             {
-                horizontalGeodeticDatum = dspm.GetUInt32("HDAT");
-                verticalDatum = dspm.GetUInt32("VDAT");
-                soundingDatum = dspm.GetUInt32("SDAT");
-                compilationScaleOfData = dspm.GetUInt32("CSCL");
-                unitsOfDepthMeasurement = dspm.GetUInt32("DUNI");
-                unitsOfHeightMeasurement = dspm.GetUInt32("HUNI");
-                unitsOfPositionalAccuracy = dspm.GetUInt32("PUNI");
-                coordinateUnits = (CoordinateUnits)dspm.GetUInt32("COUN");
-                coordinateMultiplicationFactor = dspm.GetUInt32("COMF");
-                soundingMultiplicationFactor = dspm.GetUInt32("SOMF");
+                subFieldRow = dspm.subFields.Values[0];
+                tagLookup = dspm.subFields.TagIndex;
+                horizontalGeodeticDatum = subFieldRow.GetUInt32(tagLookup["HDAT"]);
+                verticalDatum = subFieldRow.GetUInt32(tagLookup["VDAT"]);
+                soundingDatum = subFieldRow.GetUInt32(tagLookup["SDAT"]);
+                compilationScaleOfData = subFieldRow.GetUInt32(tagLookup["CSCL"]);
+                unitsOfDepthMeasurement = subFieldRow.GetUInt32(tagLookup["DUNI"]);
+                unitsOfHeightMeasurement = subFieldRow.GetUInt32(tagLookup["HUNI"]);
+                unitsOfPositionalAccuracy = subFieldRow.GetUInt32(tagLookup["PUNI"]);
+                coordinateUnits = (CoordinateUnits)subFieldRow.GetUInt32(tagLookup["COUN"]);
+                coordinateMultiplicationFactor = subFieldRow.GetUInt32(tagLookup["COMF"]);
+                soundingMultiplicationFactor = subFieldRow.GetUInt32(tagLookup["SOMF"]);
                 // COMT
-            }           
+            }
         }
     }
 }

@@ -19,91 +19,22 @@ namespace S57
     //          <R> - FSPT Feature to Spatial Record Pointer
     public class Feature
     {
-        private DataRecord _dataRecord;
-
-        public BaseFile baseFile;
-        public Cell cell;
-
         // FRID : Feature Record Identifier Field
-        public uint RecordName;                         // RCNM
-        public uint RecordIdentificationNumber;         // RCID
-        public GeometricPrimitive Primitive;            // PRIM
+        public NAMEkey namekey;
+        public DataRecord FeatureRecord;
+        public Dictionary<S57Att, string> Attributes;     // ATTF Attributes
+        public VectorRecordPointer enhVectorPtrs = null;
+        public FeatureObjectPointer enhFeaturePtrs = null;
+        public GeometricPrimitive Primitive;            // PRIM        // FOID : 
         public uint Group;                              // GRUP     
-        public uint Code;                               // OBJL
-        public uint RecordVersion;                      // RVER
-        public RecordUpdate RecordUpdateInstruction;    // RUIN
-
-        // FOID : 
+        public S57Obj ObjectCode;                         // OBJL
         public LongName lnam;                           // FOID Object Identifier Field
-        public Dictionary<uint, string> Attributes;     // ATTF Attributes
-
-        // FFPC : Feature Record To Feature Object Pointer Control
-        public RecordUpdate FeatureObjectPointerUpdateInstruction;  // FFUI 
-        public uint FeatureObjectPointerIndex;                      // FFIX : Index (position) of the adressed record pointer within the FFPT field(s) of the target record
-        public uint NumberOfFeatureObjectPointers;                  // NFPT : Number of record pointers in the FFPT field(s) of the update record
-
-        public List<FeatureRecordPointer> FeaturePtrs;      // <R> FFPT : Pointer Fields
-
-        // FSPC : Feature Record to Spatial Record Pointer Control
-        public RecordUpdate FeatureToSpatialRecordPointerUpdateInstruction; // FSUI
-        public uint FeatureToSpatialRecordPointerIndex;             // FSIX : Index (position) of the adressed record pointer within the FSPT fields of the target record
-        public uint NumberOfFeatureToSpatialRecordPointers;         // NSPT : Number of record pointers in the FSPT field of the target record
-
-        public List<VectorRecordPointer> VectorPtrs;        // <R> FSPT : Feature Record to Spatial Record Pointer
-
-        public override string ToString()
-        {
-            return Code + " " + lnam.ToString();
-        }
-
-        //
-        // It might be necessary to go recursive on that one since a vector can be made of vectors...
-        //
-        public double PositionAccuracy
-        {
-            get {
-                if (_positionAccuracy == uint.MaxValue)
-                {
-                    uint positionAccuracy = uint.MinValue;
-                    foreach (var vectorPtr in VectorPtrs)
-                    {
-                        var vector = vectorPtr.Vector;
-                        var posaccCode = S57Attributes.Get("POSACC").Code;
-                        if (vector.Attributes != null && vector.Attributes.ContainsKey(posaccCode))
-                        {
-                            var sPosacc = vector.Attributes[posaccCode];
-                            double posacc = double.Parse(sPosacc, CultureInfo.InvariantCulture );
-                            if( posacc > positionAccuracy )
-                            {
-                                _positionAccuracy = posacc;
-                            }
-                        }
-                    }
-                }
-                if (_positionAccuracy == uint.MaxValue)
-                {
-                    _positionAccuracy = 10; // by default, positionAccuracy = 10 m
-                }
-                return _positionAccuracy;
-            }
-        }
-
-        private double _positionAccuracy = uint.MaxValue;
-            // From Vector Attributes
-
-        public string this[string i]                        // Attributes accessor thru acronym
-        {
-            get
-            {
-                var attr = S57Attributes.Get(i);
-                if (attr == null || !Attributes.ContainsKey(attr.Code))
-                {
-                    return null;
-                }
-                return Attributes[attr.Code];
-            }
-        }
-
+        // some private variables  
+        uint agen;
+        uint fidn;
+        uint fids;
+        object[] subFieldRow;
+        Dictionary<string, int> tagLookup;
         public Geometry GetGeometry()
         {
             int count;
@@ -111,35 +42,37 @@ namespace S57
             {
                 case GeometricPrimitive.Point:
                     {
-                        if (VectorPtrs[0] == null || VectorPtrs[0].Vector == null) return null;
-                        return VectorPtrs[0].Vector.Geometry;
+                        if (enhVectorPtrs.Values[0] == null || enhVectorPtrs.VectorList[0] == null) return null;
+                        return enhVectorPtrs.VectorList[0].Geometry;
                     }
                 case GeometricPrimitive.Line:
                     {
                         //initialize StartNode Pointer for later check how to build geometry
-                        VectorRecordPointer StartNode = new VectorRecordPointer();
+                        //VectorRecordPointer StartNode = new VectorRecordPointer();
+                        Vector StartNode;
                         //initialize Contour to accumulate lines
                         Line Contour = new Line();
-                        for (int i = 0; i < VectorPtrs.Count; i++)
+                        for (int i = 0; i < enhVectorPtrs.Values.Count; i++)
                         {
-                            var vectorPtr = VectorPtrs[i];
                             //first, check if vector exist, and if it is supposed to be visible 
                             //(to improve: masked points should still be added for correct topology, just not rendered later)
-                            if (vectorPtr.Vector == null || vectorPtr.Mask == Masking.Mask) break;
+                            int mask = enhVectorPtrs.TagIndex["MASK"];
+                            int ornt = enhVectorPtrs.TagIndex["ORNT"];
+                            if (enhVectorPtrs.VectorList[i] == null || enhVectorPtrs.Values[i].GetUInt32(mask) == (uint)Masking.Mask) break;
 
                             //next, check if edge needs to be reversed for the intended usage 
                             //Do this on a copy to not mess up original record wich might be used elsewhere
-                            var edge = new List<Point>((vectorPtr.Vector.Geometry as Line).points);
-                            if (vectorPtr.Orientation == Orientation.Reverse)
+                            var edge = new List<Point>((enhVectorPtrs.VectorList[i].Geometry as Line).points);
+                            if (enhVectorPtrs.Values[i].GetUInt32(ornt) == (uint)Orientation.Reverse)
                             {
                                 edge.Reverse();
                                 //note: Reversing is not reversing the VectorRecordPointers, see S57 Spec 3.1 section 3.20 (i.e. index [0] is now end node instead of start node)
                                 //therefore assign private StartNode pointer for some later checks 
-                                StartNode = vectorPtr.Vector.VectorRecordPointers[1];
+                                StartNode = enhVectorPtrs.VectorList[i].enhVectorPtrs.VectorList[1];
                             }
                             else
                             {
-                                StartNode = vectorPtr.Vector.VectorRecordPointers[0];
+                                StartNode = enhVectorPtrs.VectorList[i].enhVectorPtrs.VectorList[0];
                             }
 
                             //now check if Contour has already accumulated points, if not just add current edge
@@ -147,9 +80,9 @@ namespace S57
                             if (count > 0)
                             {
                                 //now check if existing contour should be extended
-                                if (Contour.points[count-1] == StartNode.Vector.Geometry as Point)
+                                if (Contour.points[count - 1] == StartNode.Geometry as Point)
                                 {
-                                       Contour.points.AddRange(edge.GetRange(1, edge.Count - 1));
+                                    Contour.points.AddRange(edge.GetRange(1, edge.Count - 1));
                                 }
                             }
                             else
@@ -166,29 +99,34 @@ namespace S57
                         //initialize PolygonSet to accumulate 1 exterior and (if available) repeated interior boundaries
                         PolygonSet ContourSet = new PolygonSet();
                         //initialize StartNode Pointer for check how to build geometry
-                        VectorRecordPointer StartNode = new VectorRecordPointer();
+                        Vector StartNode;
                         //initialize Contour to accumulate boundaries
                         Area Contour = new Area();
-                        for (int i = 0; i < VectorPtrs.Count; i++)
+                        for (int i = 0; i < enhVectorPtrs.Values.Count; i++)
                         {
-                            var vectorPtr = VectorPtrs[i];
                             //first, check if vector exist, and if it is supposed to be visible
                             //(to improve: masked points should still be added for correct topology, just not rendered later)
-                            if (vectorPtr.Vector == null || vectorPtr.Mask == Masking.Mask) break;
+                            int mask = enhVectorPtrs.TagIndex["MASK"];
+                            int ornt = enhVectorPtrs.TagIndex["ORNT"];
+                            if (enhVectorPtrs.VectorList[i] == null || enhVectorPtrs.Values[i].GetUInt32(mask) == (uint)Masking.Mask) break;
 
                             //next, check if edge needs to be reversed for the intended usage 
                             //Do this on a copy to not mess up original record wich might be used elsewhere
-                            var edge = new List<Point>((vectorPtr.Vector.Geometry as Line).points);
-                            if (vectorPtr.Orientation == Orientation.Reverse)
+                            //var edge = new List<Point>((vectorPtr.Vector.Geometry as Line).points);
+
+                            //var edge = new List<Point>((vectorPtr.Vector.Geometry as Line).points);
+                            var edge = new List<Point>((enhVectorPtrs.VectorList[i].Geometry as Line).points);
+
+                            if (enhVectorPtrs.Values[i].GetUInt32(ornt) == (uint)Orientation.Reverse)
                             {
                                 edge.Reverse();
                                 //note: Reversing is not reversing the VectorRecordPointers, see S57 Spec 3.1 section 3.20 (i.e. index [0] is now end node instead of start node)
                                 //therefore assign private StartNode pointer for some later checks 
-                                StartNode = vectorPtr.Vector.VectorRecordPointers[1];
+                                StartNode = enhVectorPtrs.VectorList[i].enhVectorPtrs.VectorList[1];
                             }
                             else
                             {
-                                StartNode = vectorPtr.Vector.VectorRecordPointers[0];
+                                StartNode = enhVectorPtrs.VectorList[i].enhVectorPtrs.VectorList[0];
                             }
 
                             //now check if Contour has already accumulated points, if not just add current edge
@@ -196,9 +134,9 @@ namespace S57
                             if (count > 0)
                             {
                                 //now check if existing contour should be extended, or if a new one for the next interior boundery should be started 
-                                if (Contour.points[count-1] == StartNode.Vector.Geometry as Point)
+                                if (Contour.points[count - 1] == StartNode.Geometry as Point)
                                 {
-                                    Contour.points.AddRange(edge.GetRange(1, edge.Count-1));
+                                    Contour.points.AddRange(edge.GetRange(1, edge.Count - 1));
                                 }
                                 else
                                 {
@@ -213,7 +151,7 @@ namespace S57
                                         //Debug.WriteLine("Panic: current polygon is not complete, and current egde is not extending it");
                                     }
                                     //initialize new contour to accumulate next boundery, add current edge to it
-                                    Contour = new Area(); 
+                                    Contour = new Area();
                                     Contour.points.AddRange(edge);
                                 }
                             }
@@ -221,7 +159,7 @@ namespace S57
                             {
                                 //add current edge points to new contour
                                 Contour.points.AddRange(edge);
-                            }                            
+                            }
                         }
                         //done, finish up and return
                         ContourSet.Areas.Add(Contour);
@@ -230,52 +168,51 @@ namespace S57
             }
             return null;
         }
-
-
-        public Feature(DataRecord record, BaseFile baseFile, Cell cell)
+        public List<SoundingData> ExtractSoundings()
         {
-            _dataRecord = record;
+            return enhVectorPtrs.VectorList[0].SoundingList;
+        }
 
-            this.baseFile = baseFile;
-            this.cell = cell;
-
-            var v001 = record.Fields.GetFieldByTag("0001");
-
+        public Feature(NAMEkey _namekey, DataRecord _FeatureRecord)
+        {
+            namekey = _namekey;
+            FeatureRecord = _FeatureRecord;
+            var fspt = _FeatureRecord.Fields.GetFieldByTag("FSPT");
+            if (fspt != null)
+                enhVectorPtrs = new VectorRecordPointer(fspt.subFields);
+            var ffpt = _FeatureRecord.Fields.GetFieldByTag("FFPT");
+            if (ffpt != null)
+                enhFeaturePtrs = new FeatureObjectPointer(ffpt.subFields);
             // FRID : Feature Record Identifier
-            var frid = record.Fields.GetFieldByTag("FRID");
+            var frid = _FeatureRecord.Fields.GetFieldByTag("FRID");
             if (frid != null)
             {
-                RecordIdentificationNumber = frid.GetUInt32("RCNM");
-                RecordName = frid.GetUInt32("RCID");
-                Primitive = (GeometricPrimitive)frid.GetUInt32("PRIM");
-                Group = frid.GetUInt32("GRUP");
-                Code = frid.GetUInt32("OBJL");
-                RecordVersion = frid.GetUInt32("RVER");
-                RecordUpdateInstruction  = (RecordUpdate)frid.GetUInt32("RUIN");
+                Primitive = (GeometricPrimitive)frid.subFields.GetUInt32(0, "PRIM");
+                Group = frid.subFields.GetUInt32(0, "GRUP");
+                ObjectCode = (S57Obj)frid.subFields.GetUInt32(0, "OBJL");
             }
-
             // FOID : Feature Object Identifier
-            var foid = record.Fields.GetFieldByTag("FOID");
+            var foid = _FeatureRecord.Fields.GetFieldByTag("FOID");
             if (foid != null)
             {
-                var agen = foid.GetUInt32("AGEN");
-                var fidn = foid.GetUInt32("FIDN");
-                var fids = foid.GetUInt32("FIDS");
+                subFieldRow = foid.subFields.Values[0];
+                tagLookup = foid.subFields.TagIndex;
+                agen = subFieldRow.GetUInt32(tagLookup["AGEN"]);
+                fidn = subFieldRow.GetUInt32(tagLookup["FIDN"]);
+                fids = subFieldRow.GetUInt32(tagLookup["FIDS"]);
                 lnam = new LongName(agen, fidn, fids);
             }
-
             // ATTF : Attributes
-            var attr = record.Fields.GetFieldByTag("ATTF");
+            var attr = _FeatureRecord.Fields.GetFieldByTag("ATTF");
             if (attr != null)
             {
-                Attributes = GetAttributes( attr, baseFile );
+                Attributes = Vector.GetAttributes(attr);
             }
-
             // NATF : National attributes NATF.
-            var natf = record.Fields.GetFieldByTag("NATF");
+            var natf = _FeatureRecord.Fields.GetFieldByTag("NATF");
             if (natf != null)
             {
-                var natfAttr = GetAttributes( natf, baseFile );
+                var natfAttr = Vector.GetAttributes(natf);
                 if (Attributes != null)
                 {
                     foreach (var entry in natfAttr)
@@ -288,422 +225,6 @@ namespace S57
                     Attributes = natfAttr;
                 }
             }
-
-            // FFPC : Feature Record To Feature Object Pointer Control
-            var ffpc = record.Fields.GetFieldByTag("FFPC");
-            if (ffpc != null)
-            {
-                FeatureObjectPointerUpdateInstruction = (RecordUpdate)ffpc.GetUInt32("FFUI");
-                FeatureObjectPointerIndex = ffpc.GetUInt32("FFIX");
-                NumberOfFeatureObjectPointers = ffpc.GetUInt32("NFPT");
-            }
-
-            // <R> FFPT : Feature Record To Feature Object Pointer
-            var ffpt = record.Fields.GetFieldByTag("FFPT");
-            if (ffpt != null)
-            {
-                FeaturePtrs = GetFFPTs( ffpt );
-                //var lnam = new LongName(ffpt.GetBytes("LNAM"));
-                //var rind = ffpt.GetUInt32("RIND");
-                //var comt = ffpt.GetString("COMT");
-            }
-
-
-            // FSPC : Feature Record to Spatial Record Pointer Control
-            var fspc = record.Fields.GetFieldByTag("FSPC");
-            if (fspc != null)
-            {
-                FeatureToSpatialRecordPointerUpdateInstruction = (RecordUpdate)fspc.GetUInt32("FSUI");
-                FeatureToSpatialRecordPointerIndex = fspc.GetUInt32("FSIX");
-                NumberOfFeatureToSpatialRecordPointers  = fspc.GetUInt32("NSPT");
-            }
-
-            // FSPT : Feature Record to Spatial Record Pointer
-            var fspt = record.Fields.GetFieldByTag("FSPT");
-            if (fspt != null)
-            {
-                VectorPtrs = GetFSPTs( fspt );
-            }
         }
-
-        public static Dictionary<uint, string> GetAttributes( DataField field, BaseFile baseFile )
-        {
-            int currentIndex = 0;
-            if (field.Tag == "ATTF" || field.Tag == "ATTV" || field.Tag == "NATF" )
-            {
-                LexicalLevel lexicalLevel = field.Tag == "ATTF" || field.Tag == "ATTV" ? baseFile.ATTFLexicalLevel : baseFile.NATFLexicalLevel;
-                Dictionary<uint, string> values = new Dictionary<uint, string>();
-                uint key = 0;
-                while( currentIndex < field.Bytes.Length && field.Bytes[currentIndex] != DataField.FieldTerminator)
-                {
-                    foreach (SubFieldDefinition subFieldDefinition in field.FieldDescription.SubFieldDefinitions)
-                    {
-                        if (subFieldDefinition.FormatTypeCode == FormatTypeCode.CharacterData)
-                        {
-                            var sb = new StringBuilder();
-                            if (subFieldDefinition.SubFieldWidth == 0)
-                            {
-                                if (lexicalLevel == LexicalLevel.ISO10646)
-                                {
-                                    while (currentIndex < field.Bytes.Length && field.Bytes[currentIndex] != DataField.UnitTerminator)
-                                    {
-                                        sb.Append(BitConverter.ToChar(field.Bytes, currentIndex));
-                                        currentIndex += 2;
-                                    }
-                                }
-                                else if (lexicalLevel == LexicalLevel.ISO8859)
-                                {
-                                    System.Text.Encoding iso8859 = System.Text.Encoding.GetEncoding("iso-8859-1");
-                                    int startIndex = currentIndex;
-                                    while (currentIndex < field.Bytes.Length && field.Bytes[currentIndex] != DataField.UnitTerminator)
-                                    {
-                                        currentIndex++;
-                                    }
-                                    string val = iso8859.GetString(field.Bytes, startIndex, currentIndex - startIndex );
-                                    //string val2 = Encoding.GetEncoding(1252).GetString(field.Bytes, startIndex, currentIndex - startIndex);
-                                    sb.Append(val);
-                                    currentIndex++;
-                                }
-                                else
-                                {
-                                    while (currentIndex < field.Bytes.Length && field.Bytes[currentIndex] != DataField.UnitTerminator)
-                                    {
-                                        sb.Append((char)field.Bytes[currentIndex]);
-                                        currentIndex++;
-                                    }
-                                    //Consume the Terminator
-                                    currentIndex++;
-                                }
-                            }
-                            else
-                            {
-                                for (int i = 0; i < subFieldDefinition.SubFieldWidth; i++)
-                                {
-                                    sb.Append((char)field.Bytes[currentIndex]);
-                                    currentIndex++;
-                                }
-                            }
-                            var s = sb.ToString();
-                            if (!field.SubFields.ContainsKey(subFieldDefinition.Tag))
-                                field.SubFields.Add(subFieldDefinition.Tag, s);
-                            if (!values.ContainsKey(key))
-                            {
-                                values.Add(key, s);
-                            }
-                            else
-                            {
-                                // Attributes Error: declared key is missing
-                            }
-                        }
-                        else if (subFieldDefinition.FormatTypeCode == FormatTypeCode.LsofBinaryForm)
-                        {
-                            switch (subFieldDefinition.BinaryFormSubType)
-                            {
-                                case ExtendedBinaryForm.IntegerSigned:
-                                    if (subFieldDefinition.BinaryFormPrecision != 4)
-                                    {
-                                        throw new NotImplementedException("Only handle Signed Ints of 4 bytes");
-                                    }
-                                    int signedValue = 0;
-                                    for (int i = 0; i < subFieldDefinition.BinaryFormPrecision; i++)
-                                    {
-                                        int tempVal = field.Bytes[currentIndex++];
-                                        for (int j = 0; j < i; j++)
-                                        {
-                                            tempVal = tempVal << 8;
-                                        }
-                                        signedValue += tempVal;
-                                    }
-                                    field.SubFields.Add(subFieldDefinition.Tag, signedValue);
-                                    break;
-                                case ExtendedBinaryForm.IntegerUnsigned:
-                                    if (subFieldDefinition.BinaryFormPrecision > 4)
-                                    {
-                                        throw new NotImplementedException("Only handle unsigned Ints 4 bytes or less");
-                                    }
-
-                                    UInt32 unsignedValue = 0;
-                                    for (int i = 0; i < subFieldDefinition.BinaryFormPrecision; i++)
-                                    {
-                                        UInt32 tempVal = field.Bytes[currentIndex++];
-                                        for (int j = 0; j < i; j++)
-                                        {
-                                            tempVal = tempVal << 8;
-                                        }
-                                        unsignedValue += tempVal;
-                                    }
-
-                                    if (!field.SubFields.ContainsKey(subFieldDefinition.Tag))
-                                        field.SubFields.Add(subFieldDefinition.Tag, unsignedValue);
-                                    key = unsignedValue;
-                                    break;
-                                default:
-                                    throw new NotImplementedException("Unhandled LsofBinaryForm");
-                            }
-                        }
-                        else if (subFieldDefinition.FormatTypeCode == FormatTypeCode.ExplicitPoint)
-                        {
-                            if (subFieldDefinition.SubFieldWidth == 0)
-                            {
-                                throw new Exception("Expected a subfield width for Explicit Point Type");
-                            }
-
-                            var tempSb = new StringBuilder();
-
-                            for (int i = 0; i < subFieldDefinition.SubFieldWidth; i++)
-                            {
-                                tempSb.Append((char)field.Bytes[currentIndex]);
-                                currentIndex++;
-                            }
-
-                            double value = 0;
-                            value = Double.Parse(tempSb.ToString(), CultureInfo.InvariantCulture);
-
-                            field.SubFields.Add(subFieldDefinition.Tag, value);
-                        }
-                        else if (subFieldDefinition.FormatTypeCode == FormatTypeCode.BitStringData)
-                        {
-                            if (subFieldDefinition.SubFieldWidth == 0)
-                            {
-                                throw new Exception("Expected a subfield width for Bit String Data");
-                            }
-                            //divide by 8 and round up
-                            int bytesToRead = (subFieldDefinition.SubFieldWidth + (8 - 1)) / 8;
-                            byte[] newByteArray = new byte[bytesToRead];
-                            for (int i = 0; i < bytesToRead; i++)
-                            {
-                                newByteArray[i] = field.Bytes[currentIndex];
-                                currentIndex++;
-                            }
-                            field.SubFields.Add(subFieldDefinition.Tag, newByteArray);
-                        }
-                        else
-                        {
-                            throw new Exception("Unhandled subField type :" + subFieldDefinition.FormatTypeCode);
-                        }
-
-                        //if (field.Bytes[field.Bytes.Length - 1] != DataField.FieldTerminator) throw new Exception("Expected Field Terminator");
-                    }
-
-                }
-                return values;
-            }
-            return null;
-        }
-
-
-
-        // Link to Feature Objects
-        public List<FeatureRecordPointer> GetFFPTs( DataField field )
-        {
-            List<FeatureRecordPointer> result = new List<FeatureRecordPointer>();
-            int currentIndex = 0;
-            if (field.Tag == "FFPT")
-            {
-                while (field.Bytes[currentIndex] != DataField.FieldTerminator && currentIndex < field.Bytes.Length )
-                {
-                    FeatureRecordPointer featureLink = new FeatureRecordPointer();
-                    foreach (SubFieldDefinition subFieldDefinition in field.FieldDescription.SubFieldDefinitions)
-                    {
-                        var tag = subFieldDefinition.Tag;
-                        if (tag == "LNAM")
-                        {
-                            int bytesToRead = (subFieldDefinition.SubFieldWidth + (8 - 1)) / 8;
-                            byte[] newByteArray = GetFixedByteArray(field, ref currentIndex, bytesToRead);
-                            featureLink.LNAM  = new LongName(newByteArray);
-                        }
-                        else if (tag == "RIND")
-                        {
-                            if (subFieldDefinition.BinaryFormPrecision > 4)
-                            {
-                                throw new NotImplementedException("Only handle unsigned Ints 4 bytes or less");
-                            }
-
-                            //UInt32 unsignedValue = 0;
-                            //currentIndex = GetUint4Bytes(field, currentIndex, out unsignedValue);
-                            //featureLink.rind = (Relationship)unsignedValue;
-                            featureLink.Rind = (Relationship)field.Bytes[currentIndex++];
-                        }
-                        else if (tag == "COMT")
-                        {
-
-                        }
-                    }
-                    result.Add(featureLink);
-                    currentIndex++;
-                }
-            }
-            return result;
-        }
-        
-        // Link to Vector Objects
-        public List<VectorRecordPointer> GetFSPTs(DataField field)
-        {
-            List<VectorRecordPointer> result = new List<VectorRecordPointer>();
-            if (field.Tag == "FSPT")
-            {
-                int currentIndex = 0;
-                while (field.Bytes[currentIndex] != DataField.FieldTerminator && currentIndex < field.Bytes.Length )
-                {
-                    VectorRecordPointer spatialLink = new VectorRecordPointer();
-                    var rcnm = field.Bytes[currentIndex++];
-                    uint rcid;
-                    currentIndex = GetUint4Bytes(field, currentIndex, out rcid);
-                    spatialLink.Name = new VectorName(rcnm, rcid);
-                    spatialLink.Orientation = (Orientation)field.Bytes[currentIndex++];
-                    spatialLink.Usage = (Usage)field.Bytes[currentIndex++];
-                    spatialLink.Mask = (Masking)field.Bytes[currentIndex++];
-                    result.Add(spatialLink);
-                }
-            }
-            return result;
-        }
-
-        // Helpers
-        private static byte[] GetFixedByteArray(DataField field, ref int currentIndex, int bytesToRead)
-        {
-            byte[] newByteArray = new byte[bytesToRead];
-            for (int i = 0; i < bytesToRead; i++)
-            {
-                newByteArray[i] = field.Bytes[currentIndex];
-                currentIndex++;
-            }
-
-            return newByteArray;
-        }
-        private static int GetUint4Bytes(DataField field, int currentIndex, out uint unsignedValue)
-        {
-            unsignedValue = 0;
-            for (int i = 0; i < 4; i++)
-            {
-                UInt32 tempVal = field.Bytes[currentIndex++];
-                for (int j = 0; j < i; j++)
-                {
-                    tempVal = tempVal << 8;
-                }
-                unsignedValue += tempVal;
-            }
-            return currentIndex;
-        }
-
-        public List<SoundingData> ExtractSoundings()
-        {
-            DataRecord dr = VectorPtrs[0].Vector.DataRecord;
-            var sg3d = dr.Fields.GetFieldByTag("SG3D");
-            var bytes = sg3d.Bytes;
-            var length = bytes.Length - 1;
-            int currentIndex = 0;
-            var soundingDatas = new List<SoundingData>();
-            //to stop at DataField.UnitTerminator while reading coordinates is a bug: "31" can occur like any other byte to encode the XCOO or YCOO coordinates 
-            //e.g. it is the first byte of latitude 34.6188063 (31+26880+10616832+335544320)
-            //while (currentIndex < length && bytes[currentIndex] != DataField.UnitTerminator) //this is a bug: unit terminator causes premature termination
-            while (currentIndex < length)
-            {
-                var soundingData = new SoundingData();
-                for (int i = 0; i < 4; i++)
-                {
-                    int tempVal = bytes[currentIndex++];
-                    for (int j = 0; j < i; j++)
-                    {
-                        tempVal = tempVal << 8;
-                    }
-                    soundingData.Y += tempVal;
-                }
-                soundingData.Y /= baseFile.coordinateMultiplicationFactor;
-                for (int i = 0; i < 4; i++)
-                {
-                    int tempVal = bytes[currentIndex++];
-                    for (int j = 0; j < i; j++)
-                    {
-                        tempVal = tempVal << 8;
-                    }
-                    soundingData.X += tempVal;
-                }
-                soundingData.X /= baseFile.coordinateMultiplicationFactor;
-                for (int i = 0; i < 4; i++)
-                {
-                    int tempVal = bytes[currentIndex++];
-                    for (int j = 0; j < i; j++)
-                    {
-                        tempVal = tempVal << 8;
-                    }
-                    soundingData.depth += tempVal;
-                }
-                soundingData.depth /= baseFile.soundingMultiplicationFactor;
-                soundingDatas.Add(soundingData);
-            }
-            return soundingDatas;
-        }
-
-        /*
-        public bool IsBuoy
-        {
-            get
-            {
-                return Code == S57Objects.BOYCAR ||
-                       Code == S57Objects.BOYLAT ||
-                       Code == S57Objects.BOYINB ||
-                       Code == S57Objects.BOYSPP ||
-                       Code == S57Objects.BOYISD ||
-                       Code == S57Objects.BOYSAW;
-            }
-        }
-
-        public bool IsBeacon
-        {
-            get
-            {
-                return Code == S57Objects.BCNCAR ||
-                    Code == S57Objects.BCNISD ||
-                    Code == S57Objects.BCNLAT ||
-                    Code == S57Objects.BCNSAW ||
-                    Code == S57Objects.BCNSPP;
-            }
-        }
-
-        public bool IsCardinal
-        {
-            get
-            {
-                return Code == S57Objects.BCNCAR || Code == S57Objects.BOYCAR;
-            }
-        }
-
-
-        public bool IsLateral
-        {
-            get
-            {
-                return Code == S57Objects.BCNLAT || Code == S57Objects.BOYLAT;
-            }
-        }
-
-        public bool IsSafeWater
-        {
-            get
-            {
-                return Code == S57Objects.BCNSAW || Code == S57Objects.BOYSAW;
-            }
-        }
-
-        public bool IsIsolatedDanger
-        {
-            get {
-                return Code == S57Objects.BCNISD || Code == S57Objects.BOYISD;
-            }
-        }
-
-        public bool IsSpecialMark
-        {
-            get {
-                return Code == S57Objects.BCNSPP || Code == S57Objects.BOYSPP; 
-            }
-        }
-
-        public bool IsAggregation
-        {
-            get { return Code == S57Objects.C_AGGR; }
-        }
-        */        
-    }
+    }   
 }

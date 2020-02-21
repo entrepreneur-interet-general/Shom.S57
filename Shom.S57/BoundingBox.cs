@@ -10,7 +10,7 @@
         public static BoundingBox FromS57(S57Reader s57 )
         {
             var boundingBox = new BoundingBox();
-            var mapCovers = s57.GetFeaturesOfClass("M_COVR");
+            var mapCovers = s57.GetFeaturesOfClass(S57Obj.M_COVR);
             foreach (var mapCover in mapCovers)
             {
                 var geom = mapCover.GetGeometry();

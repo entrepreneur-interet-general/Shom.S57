@@ -1,5 +1,6 @@
 using System;
 using S57.File;
+using Shom.ISO8211; //this namespace is the current home of the extension methods
 
 namespace S57
 {
@@ -21,7 +22,7 @@ namespace S57
         {
             get
             {
-                return Int32.Parse(_baseFile.DataSetGeneralInformationRecord.Fields.GetFieldByTag("DSID").GetString("EDTN"));
+                return Int32.Parse(_baseFile.DataSetGeneralInformationRecord.Fields.GetFieldByTag("DSID").subFields.GetString(0, "EDTN")); 
             }
         }
 
@@ -29,7 +30,7 @@ namespace S57
         {
             get
             {
-                return Int32.Parse(_baseFile.DataSetGeneralInformationRecord.Fields.GetFieldByTag("DSID").GetString("UPDN"));
+                return Int32.Parse(_baseFile.DataSetGeneralInformationRecord.Fields.GetFieldByTag("DSID").subFields.GetString(0, "UPDN"));
             }
         }
 
@@ -37,7 +38,8 @@ namespace S57
         {
             get
             {
-                return _baseFile.DataSetGeneralInformationRecord.Fields.GetFieldByTag("DSID").GetUInt32("INTU");
+                
+                return _baseFile.DataSetGeneralInformationRecord.Fields.GetFieldByTag("DSID").subFields.GetUInt32(0, "INTU");
             }
         }
 
@@ -45,7 +47,8 @@ namespace S57
         {
             get
             {
-                return _baseFile.DataSetGeneralInformationRecord.Fields.GetFieldByTag("DSID").GetString("DSNM");
+                
+                return _baseFile.DataSetGeneralInformationRecord.Fields.GetFieldByTag("DSID").subFields.GetString(0, "DSNM"); 
             }
         }
 
@@ -53,7 +56,7 @@ namespace S57
         {
             get
             {
-                return ConvertToDateTime(_baseFile.DataSetGeneralInformationRecord.Fields.GetFieldByTag("DSID").GetString("UADT"));
+                return ConvertToDateTime(_baseFile.DataSetGeneralInformationRecord.Fields.GetFieldByTag("DSID").subFields.GetString(0, "UDAT"));
             }
         }
 
@@ -61,15 +64,15 @@ namespace S57
         {
             get
             {
-                return ConvertToDateTime(_baseFile.DataSetGeneralInformationRecord.Fields.GetFieldByTag("DSID").GetString("ISDT"));
+                return ConvertToDateTime(_baseFile.DataSetGeneralInformationRecord.Fields.GetFieldByTag("DSID").subFields.GetString(0, "ISDT"));
             }
         }
 
         public Agency ProducingAgency
         {
             get
-            {
-                return new Agency(_baseFile.DataSetGeneralInformationRecord.Fields.GetFieldByTag("DSID").GetUInt32("AGEN"));
+            {                
+                return new Agency(_baseFile.DataSetGeneralInformationRecord.Fields.GetFieldByTag("DSID").subFields.GetUInt32(0, "AGEN"));
             }
         }
 
@@ -77,7 +80,7 @@ namespace S57
         {
             get
             {
-                return _baseFile.DataSetGeneralInformationRecord.Fields.GetFieldByTag("DSID").GetString("COMT");
+                return _baseFile.DataSetGeneralInformationRecord.Fields.GetFieldByTag("DSID").subFields.GetString(0, "COMT");
             }
         }
 
@@ -85,7 +88,7 @@ namespace S57
         {
             get
             {
-                return new Datum(_baseFile.DataSetGeographicReferenceRecord.Fields.GetFieldByTag("DSPM").GetUInt32("VDAT"));
+                return new Datum(_baseFile.DataSetGeographicReferenceRecord.Fields.GetFieldByTag("DSPM").subFields.GetUInt32(0, "VDAT"));
             }
         }
 
@@ -93,7 +96,7 @@ namespace S57
         {
             get
             {
-                return new Datum(_baseFile.DataSetGeographicReferenceRecord.Fields.GetFieldByTag("DSPM").GetUInt32("SDAT"));
+                return new Datum(_baseFile.DataSetGeographicReferenceRecord.Fields.GetFieldByTag("DSPM").subFields.GetUInt32(0, "SDAT"));
             }
         }
 

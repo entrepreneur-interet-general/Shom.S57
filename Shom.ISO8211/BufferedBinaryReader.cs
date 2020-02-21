@@ -12,7 +12,7 @@
         private int bufferOffset;
         private int numBufferedBytes;
         public int BytesRead;
-        private bool EOFreached;
+        bool EOFreached;
 
         public BufferedBinaryReader(Stream stream, int bufferSize)
         {
@@ -76,11 +76,8 @@
             byte[] result = new byte[count];         
             int numRead = 0;
             int transfer;
-            if (NumBytesAvailable<count)
+            if (NumBytesAvailable<count && NumBytesAvailable< bufferSize)
                 FillBuffer();
-            if (count > NumBytesAvailable)
-            {
-            }
             do
             {                
                 if (NumBytesAvailable == 0)
@@ -90,7 +87,9 @@
                 bufferOffset += transfer;
                 numRead += transfer;
                 count -= transfer;
-            } while (FillBuffer() && count > 0);
+                if(count>NumBytesAvailable)//re-fill buffer, but only when needed
+                    FillBuffer();
+            } while (NumBytesAvailable>0 && count > 0);
 
             if (numRead != result.Length)
             {
@@ -101,7 +100,7 @@
             }
             BytesRead += numRead;
             return result;
-        }
+        }               
 
         public void Dispose()
         {
