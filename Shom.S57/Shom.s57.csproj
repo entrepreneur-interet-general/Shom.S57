@@ -69,6 +69,7 @@
     <Compile Include="File\ProductInfo.cs" />
     <Compile Include="File\UpdateFile.cs" />
     <Compile Include="Geometry\Area.cs" />
+    <Compile Include="Geometry\FlatPolygon.cs" />
     <Compile Include="Geometry\Geometry.cs" />
     <Compile Include="Geometry\Line.cs" />
     <Compile Include="Geometry\Point.cs" />

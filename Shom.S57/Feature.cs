@@ -35,7 +35,41 @@ namespace S57
         uint fids;
         object[] subFieldRow;
         Dictionary<string, int> tagLookup;
-        public Geometry GetGeometry()
+
+        public List<Dictionary<S57Att, string>> GetSpacialAttributes()
+        {
+            //note: returning all QUAPOS Value of all spacial components making up e.g. an area is wastefull: 
+            //a procedure such as QUAPNT02 has conditions leading to an early out, which is more effective. 
+            //Therefore consider implementing the loops below directly in procedures such as QUAPOS: 
+            //would avoid allocation of a new List of Dictionaries and such wastefull exhaustive accumulation
+            List<Dictionary<S57Att, string>> temp = new List<Dictionary<S57Att, string>>();
+            if (Primitive == GeometricPrimitive.Point)
+            {
+                if (enhVectorPtrs.VectorList[0] == null || enhVectorPtrs.VectorList[0].Attributes == null) return null;
+                temp.Add(enhVectorPtrs.VectorList[0].Attributes);
+                return temp;
+            }
+            else if (Primitive == GeometricPrimitive.Line || Primitive == GeometricPrimitive.Area)
+            {
+                for (int i = 0; i < enhVectorPtrs.VectorList.Count; i++)
+                {
+                    if (enhVectorPtrs.VectorList[i] == null) continue;
+                    ////note: only the contributing line and area features appear to have QUAPOS set. the contributing points have Attributes=null
+                    //for (int j = 0; j < enhVectorPtrs.VectorList[i].enhVectorPtrs.VectorList.Count; j++)
+                    //{
+                    //    if (enhVectorPtrs.VectorList[i].enhVectorPtrs.VectorList[j] == null) break;
+                    //    if (enhVectorPtrs.VectorList[i].enhVectorPtrs.VectorList[j].Attributes == null) continue;
+                    //    temp.Add(enhVectorPtrs.VectorList[i].enhVectorPtrs.VectorList[j].Attributes); 
+                    //}
+                    if (enhVectorPtrs.VectorList[i] == null) continue;
+                    if (enhVectorPtrs.VectorList[i].Attributes == null) continue;
+                    temp.Add(enhVectorPtrs.VectorList[i].Attributes);
+                }
+                return temp;
+            }
+            return null; //return value when feature is neither point, line or area
+        }
+        public Geometry GetGeometry(bool returnFlatPolygon)
         {
             int count;
             switch (Primitive)
@@ -96,74 +130,137 @@ namespace S57
                     }
                 case GeometricPrimitive.Area:
                     {
-                        //initialize PolygonSet to accumulate 1 exterior and (if available) repeated interior boundaries
-                        PolygonSet ContourSet = new PolygonSet();
-                        //initialize StartNode Pointer for check how to build geometry
-                        Vector StartNode;
-                        //initialize Contour to accumulate boundaries
-                        Area Contour = new Area();
-                        for (int i = 0; i < enhVectorPtrs.Values.Count; i++)
+                        if (returnFlatPolygon)
                         {
-                            //first, check if vector exist, and if it is supposed to be visible
-                            //(to improve: masked points should still be added for correct topology, just not rendered later)
-                            int mask = enhVectorPtrs.TagIndex["MASK"];
-                            int ornt = enhVectorPtrs.TagIndex["ORNT"];
-                            if (enhVectorPtrs.VectorList[i] == null || enhVectorPtrs.Values[i].GetUInt32(mask) == (uint)Masking.Mask) break;
-
-                            //next, check if edge needs to be reversed for the intended usage 
-                            //Do this on a copy to not mess up original record wich might be used elsewhere
-                            //var edge = new List<Point>((vectorPtr.Vector.Geometry as Line).points);
-
-                            //var edge = new List<Point>((vectorPtr.Vector.Geometry as Line).points);
-                            var edge = new List<Point>((enhVectorPtrs.VectorList[i].Geometry as Line).points);
-
-                            if (enhVectorPtrs.Values[i].GetUInt32(ornt) == (uint)Orientation.Reverse)
+                            //initialize StartNode Pointer for check how to build geometry
+                            Vector StartNode;
+                            int currentContourStartIndex=0;
+                            
+                            //initialize Contour to accumulate boundaries
+                            FlatPolygon Contour = new FlatPolygon();
+                            for (int i = 0; i < enhVectorPtrs.Values.Count; i++)
                             {
-                                edge.Reverse();
-                                //note: Reversing is not reversing the VectorRecordPointers, see S57 Spec 3.1 section 3.20 (i.e. index [0] is now end node instead of start node)
-                                //therefore assign private StartNode pointer for some later checks 
-                                StartNode = enhVectorPtrs.VectorList[i].enhVectorPtrs.VectorList[1];
-                            }
-                            else
-                            {
-                                StartNode = enhVectorPtrs.VectorList[i].enhVectorPtrs.VectorList[0];
-                            }
+                                //first, check if vector exist, and if it is supposed to be visible
+                                //(to improve: masked points should still be added for correct topology, just not rendered later)
+                                int mask = enhVectorPtrs.TagIndex["MASK"];
+                                int ornt = enhVectorPtrs.TagIndex["ORNT"];
+                                if (enhVectorPtrs.VectorList[i] == null || enhVectorPtrs.Values[i].GetUInt32(mask) == (uint)Masking.Mask) break;
 
-                            //now check if Contour has already accumulated points, if not just add current edge
-                            count = Contour.points.Count;
-                            if (count > 0)
-                            {
-                                //now check if existing contour should be extended, or if a new one for the next interior boundery should be started 
-                                if (Contour.points[count - 1] == StartNode.Geometry as Point)
+                                //next, check if edge needs to be reversed for the intended usage 
+                                //Do this on a copy to not mess up original record wich might be used elsewhere
+                                var edge = new List<Point>((enhVectorPtrs.VectorList[i].Geometry as Line).points);
+                                if (enhVectorPtrs.Values[i].GetUInt32(ornt) == (uint)Orientation.Reverse)
                                 {
-                                    Contour.points.AddRange(edge.GetRange(1, edge.Count - 1));
+                                    edge.Reverse();
+                                    //note: Reversing is not reversing the VectorRecordPointers, see S57 Spec 3.1 section 3.20 (i.e. index [0] is now end node instead of start node)
+                                    //therefore assign private StartNode pointer for some later checks 
+                                    StartNode = enhVectorPtrs.VectorList[i].enhVectorPtrs.VectorList[1];
                                 }
                                 else
                                 {
-                                    //done, add current polygon boundery to ContourSet 
-                                    //verify that polygone is closed last point in list equals first
-                                    if (Contour.points[count - 1] == Contour.points[0])
+                                    StartNode = enhVectorPtrs.VectorList[i].enhVectorPtrs.VectorList[0];
+                                }
+
+                                //now check if Contour has already accumulated points, if not just add current edge
+                                count = Contour.points.Count;
+                                if (count > 0)
+                                {
+                                    //now check if existing contour should be extended, or if also a holeIndex indicating start of next interior boundery should be added
+                                    if (Contour.points[count - 1] == StartNode.Geometry as Point)
                                     {
-                                        ContourSet.Areas.Add(Contour);
+                                        Contour.points.AddRange(edge.GetRange(1, edge.Count - 1));
                                     }
                                     else
                                     {
-                                        //Debug.WriteLine("Panic: current polygon is not complete, and current egde is not extending it");
+                                        //verify that polygone is closed last point in list equals first
+                                        if (Contour.points[count - 1] == Contour.points[currentContourStartIndex])
+                                        {
+                                            Contour.holesIndices.Add(count);
+                                            currentContourStartIndex=count;
+                                            //start accumulatating hole points with current edge
+                                            Contour.points.AddRange(edge);
+                                        }
+                                        //else
+                                        //{
+                                        //    Debug.WriteLine("Panic: current polygon is not complete, and current egde is not extending it");
+                                        //}
                                     }
-                                    //initialize new contour to accumulate next boundery, add current edge to it
-                                    Contour = new Area();
+                                }
+                                else
+                                {
+                                    //add current edge points to new contour
                                     Contour.points.AddRange(edge);
                                 }
                             }
-                            else
-                            {
-                                //add current edge points to new contour
-                                Contour.points.AddRange(edge);
-                            }
+                            return Contour;
                         }
-                        //done, finish up and return
-                        ContourSet.Areas.Add(Contour);
-                        return ContourSet;
+                        else
+                        {
+                            //initialize PolygonSet to accumulate 1 exterior and (if available) repeated interior boundaries
+                            PolygonSet ContourSet = new PolygonSet();
+                            //initialize StartNode Pointer for check how to build geometry
+                            Vector StartNode;
+                            //initialize Contour to accumulate boundaries
+                            Area Contour = new Area();
+                            for (int i = 0; i < enhVectorPtrs.Values.Count; i++)
+                            {
+                                //first, check if vector exist, and if it is supposed to be visible
+                                //(to improve: masked points should still be added for correct topology, just not rendered later)
+                                int mask = enhVectorPtrs.TagIndex["MASK"];
+                                int ornt = enhVectorPtrs.TagIndex["ORNT"];
+                                if (enhVectorPtrs.VectorList[i] == null || enhVectorPtrs.Values[i].GetUInt32(mask) == (uint)Masking.Mask) break;
+
+                                //next, check if edge needs to be reversed for the intended usage 
+                                //Do this on a copy to not mess up original record wich might be used elsewhere
+                                var edge = new List<Point>((enhVectorPtrs.VectorList[i].Geometry as Line).points);
+                                if (enhVectorPtrs.Values[i].GetUInt32(ornt) == (uint)Orientation.Reverse)
+                                {
+                                    edge.Reverse();
+                                    //note: Reversing is not reversing the VectorRecordPointers, see S57 Spec 3.1 section 3.20 (i.e. index [0] is now end node instead of start node)
+                                    //therefore assign private StartNode pointer for some later checks 
+                                    StartNode = enhVectorPtrs.VectorList[i].enhVectorPtrs.VectorList[1];
+                                }
+                                else
+                                {
+                                    StartNode = enhVectorPtrs.VectorList[i].enhVectorPtrs.VectorList[0];
+                                }
+
+                                //now check if Contour has already accumulated points, if not just add current edge
+                                count = Contour.points.Count;
+                                if (count > 0)
+                                {
+                                    //now check if existing contour should be extended, or if a new one for the next interior boundery should be started 
+                                    if (Contour.points[count - 1] == StartNode.Geometry as Point)
+                                    {
+                                        Contour.points.AddRange(edge.GetRange(1, edge.Count - 1));
+                                    }
+                                    else
+                                    {
+                                        //done, add current polygon boundery to ContourSet 
+                                        //verify that polygone is closed last point in list equals first
+                                        if (Contour.points[count - 1] == Contour.points[0])
+                                        {
+                                            ContourSet.Areas.Add(Contour);
+                                        }
+                                        //else
+                                        //{
+                                        //    //Debug.WriteLine("Panic: current polygon is not complete, and current egde is not extending it");
+                                        //}
+                                        //initialize new contour to accumulate next boundery, add current edge to it
+                                        Contour = new Area();
+                                        Contour.points.AddRange(edge);
+                                    }
+                                }
+                                else
+                                {
+                                    //add current edge points to new contour
+                                    Contour.points.AddRange(edge);
+                                }
+                            }
+                            //done, finish up and return
+                            ContourSet.Areas.Add(Contour);
+                            return ContourSet;
+                        }
                     }
             }
             return null;

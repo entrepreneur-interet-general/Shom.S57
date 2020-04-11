@@ -23,28 +23,29 @@ namespace Shom.S57.Tests
             //string MapName = "CATALOG.031";
             //reader.ReadArchiveCatalogue(archive, MapName);
 
-            string MapName = "US5NC12M.000";
-            //string MapName = "US5NC18M.000";
+            //string MapName = "US5NC12M.000";
+            string MapName = "US5NC18M.000";
             //string MapName = "US5NC51M.000";
             reader.ReadFromArchive(archive, MapName, true);
             archive.Dispose();
-            ListRelationships(reader, S57Obj.BCNLAT);
-
+            //ListRelationships(reader, S57Obj.BOYSAW);
+            //ListFeatures(reader);
+            //QalityOfPosition(reader);
 
             //reader.Read(new FileStream(path, FileMode.Open));
-            //ListFeatures(reader);
-            //PolygonSet TempSet;
-            //var features = reader.GetFeaturesOfClass(S57Obj.DEPARE);
-            //for (int i = 0; i < features.Count; i++)
-            //{
-            //    //if (features[i].namekey.RecordIdentificationNumber == 6163)
-            //    //{
-            //    if (features[i].Primitive == GeometricPrimitive.Area)
-            //    {
-            //        TempSet = features[i].GetGeometry() as PolygonSet;
-            //    }
-            //    //}
-            //}
+
+            FlatPolygon TempSet;
+            var features = reader.GetFeaturesOfClass(S57Obj.DEPARE);
+            for (int i = 0; i < features.Count; i++)
+            {
+                //if (features[i].namekey.RecordIdentificationNumber == 6163)
+                //{
+                if (features[i].Primitive == GeometricPrimitive.Area)
+                {
+                    TempSet = features[i].GetGeometry(true) as FlatPolygon;
+                }
+                //}
+            }
             //var test1 = features.First(x => x.RecordName == 6140u);
             //var test2 = features.First(x => x.RecordName == 6140u).GetGeometry() as PolygonSet;
             //var test1 = features.First(x => x.RecordName == 6156u);
@@ -106,8 +107,19 @@ namespace Shom.S57.Tests
                 Console.WriteLine(rcid + "." + description + targetinfo);
             }
         }
-        
-		private static void ListFeatures(S57Reader reader)
+
+        private static void QalityOfPosition(S57Reader reader)
+        {
+            foreach (var bla in Enum.GetValues(typeof(S57Obj)))
+            {
+                var features = reader.GetFeaturesOfClass((S57Obj)bla);
+                for (int i = 0; i < features.Count; i++)
+                {
+                    var bla2 = features[i].GetSpacialAttributes();
+                }
+            }
+        }
+        private static void ListFeatures(S57Reader reader)
         {
             foreach (var obj in S57ObjectInfo.S57Dict)
             {
