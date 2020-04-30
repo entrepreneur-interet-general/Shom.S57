@@ -13,7 +13,7 @@
             var mapCovers = s57.GetFeaturesOfClass(S57Obj.M_COVR);
             foreach (var mapCover in mapCovers)
             {
-                var geom = mapCover.GetGeometry();
+                var geom = mapCover.GetGeometry(false);
                 if (geom is Area)
                 {
                     var area = geom as Area;
