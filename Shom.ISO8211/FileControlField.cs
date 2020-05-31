@@ -29,7 +29,7 @@ namespace Shom.ISO8211
 
         private readonly string _listOfFieldTagPairs;
 
-        public FileControlField(string tag, byte[] fieldControls, string externalFileTitle, string listOfFieldTagPairs, int sizeOfTag)
+        public FileControlField(string tag, ArraySegment<byte> fieldControls, string externalFileTitle, string listOfFieldTagPairs, int sizeOfTag)
             : base(tag, fieldControls)
         {
             _externalFileTitle = externalFileTitle;

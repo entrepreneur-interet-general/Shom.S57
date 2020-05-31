@@ -4,10 +4,21 @@ namespace S57
 {
     //source: http://www.s-57.com/
     //retrieved on January 25, 2019
-    
+    public struct MyS57ObjComparer : IEqualityComparer<S57Obj>
+    {
+        public bool Equals(S57Obj x, S57Obj y)
+        {
+            return x == y;
+        }
+
+        public int GetHashCode(S57Obj obj)
+        {
+            return (int)obj;
+        }
+    }
     public static class S57ObjectInfo
     { 
-        public static Dictionary<S57Obj, string> S57Dict = new Dictionary<S57Obj, string>()
+        public static Dictionary<S57Obj, string> S57Dict = new Dictionary<S57Obj, string>(new MyS57ObjComparer())
         {
             {S57Obj.ADMARE, "Administration area (Named)"},
             {S57Obj.AIRARE,  "Airport / airfield"},

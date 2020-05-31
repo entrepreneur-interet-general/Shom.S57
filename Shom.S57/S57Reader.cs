@@ -15,8 +15,7 @@ namespace S57
 
         public static int mapIndex = 0;
 
-        public List<Cell> cells = new List<Cell>();
-        public Cell cell;
+        public Cell cellInfo;
         public BaseFile baseFile;
         public UpdateFile updateFile;
         public CatalogueFile catalogueFile;
@@ -25,51 +24,108 @@ namespace S57
         public Dictionary<uint, Catalogue> ExchangeSetFiles = new Dictionary<uint, Catalogue>();
         public Dictionary<uint, Catalogue> BaseFiles = new Dictionary<uint, Catalogue>();
 
-        public void ReadCatalogue(System.IO.Stream stream)
-        {
-            using (var reader = new Iso8211Reader(stream))
-            {
-                catalogueFile = new CatalogueFile(reader);
-                BuildCatalogue();
-            }
-        }
+        byte[] fileByteArray;
 
-        public void ReadProductInfo(System.IO.Stream stream)
-        {
-            using (var reader = new Iso8211Reader(stream))
-            {
-                productInfo = new ProductInfo(reader);
-            }
-        }
+        //public void ReadCatalogue(System.IO.Stream stream)
+        //{
+        //    using (var reader = new Iso8211Reader(stream))
+        //    {
+        //        catalogueFile = new CatalogueFile(reader);
+        //        BuildCatalogue();
+        //    }
+        //}
 
-        public void ReadArchiveCatalogue(ZipArchive archive, string MapName)
+        public void ReadCatalogue(ZipArchive archive)
         {
-            string basename = MapName.Remove(MapName.Length - 4);
             Stream S57map = null;
             ZipArchiveEntry catalogueentry = null;
             foreach (ZipArchiveEntry entry in archive.Entries)
             {
-                if (entry.Name.Contains(basename))
+                if (entry.Name.Equals("CATALOG.031"))
                 {
-                    if (entry.Name.Equals(MapName))
-                    {
-                        catalogueentry = entry;
-                    }                    
+                    catalogueentry = entry;
                 }
             }
             S57map = catalogueentry.Open();
-            using (var reader = new Iso8211Reader(S57map))
+            var count = catalogueentry.Length;
+            byte[] fileByteArray = new byte[count]; //consider re-using same byte array for next file to minimize new allocations
+            MemoryStream memoryStream = new MemoryStream(fileByteArray);
+            S57map.CopyTo(memoryStream);
+            memoryStream.Dispose();
+            using (var reader = new Iso8211Reader(fileByteArray))
             {
                 catalogueFile = new CatalogueFile(reader);
                 BuildCatalogue();
+                foreach (var bla in reader.tagcollector)
+                    Console.WriteLine(bla);
             }
-            S57map.Dispose();            
+            S57map.Dispose();
         }
 
-        public void ReadFromArchive(ZipArchive archive, string MapName, bool ApplyUpdates)
+
+
+        //public void ReadCatalogue(string RootDirectory)
+        //{
+        //    if (!RootDirectory.EndsWith("ENC_ROOT"))
+        //    {
+        //        //Console.WriteLine("Selected folder is not ENC_ROOT folder of a Volume");
+        //        return;
+        //    }
+        //    Stream S57map = null;
+        //    string[] filePaths = Directory.GetFiles(@RootDirectory, "CATALOG.031", SearchOption.AllDirectories);
+        //    string catalogueentry = null;
+        //    if (filePaths.Length > 1)
+        //    {
+        //        //Console.WriteLine("More than one Catalogue file found. Please selected MapSet root folder");
+        //        return;
+        //    }
+        //    catalogueentry = filePaths[0];
+        //    S57map = new FileStream(@catalogueentry, FileMode.Open, FileAccess.Read, FileShare.Read, 65536);
+        //    using (var reader = new Iso8211Reader(S57map))
+        //    {
+        //        catalogueFile = new CatalogueFile(reader);
+        //        BuildCatalogue();
+        //    }
+        //    S57map.Dispose();       
+        //}
+
+        //public void ReadProductInfo(System.IO.Stream stream)
+        //{
+        //    using (var reader = new Iso8211Reader(stream))
+        //    {
+        //        productInfo = new ProductInfo(reader);
+        //    }
+        //}
+
+        public void ReadProductInfo(ZipArchive archive, string MapName)
         {
-            //Stopwatch timer = new Stopwatch();
-            //timer.Start();
+            Stream S57map = null;
+            foreach (ZipArchiveEntry entry in archive.Entries)
+            {
+                if (entry.Name.Equals(MapName))
+                {
+                    S57map = entry.Open();
+                    int count = (int)entry.Length;
+                    if (fileByteArray == null)
+                        fileByteArray = new byte[count];
+                    else
+                    {
+                        Array.Clear(fileByteArray, 0, fileByteArray.Length);
+                        Array.Resize(ref fileByteArray, count);
+                    }
+                    MemoryStream memoryStream = new MemoryStream(fileByteArray);
+                    S57map.CopyTo(memoryStream);
+                    memoryStream.Dispose();
+
+                    using (var reader = new Iso8211Reader(fileByteArray))
+                    {
+                        productInfo = new ProductInfo(reader);
+                    }
+                }
+            }
+        }
+        public void Read(ZipArchive archive, string MapName, bool ApplyUpdates)
+        {
             string basename = MapName.Remove(MapName.Length - 4);
             Stream S57map=null;
             ZipArchiveEntry baseentry=null;
@@ -96,20 +152,38 @@ namespace S57
                 }
             }
             S57map = baseentry.Open();
-            using (var reader = new Iso8211Reader(S57map))
+            int count = (int)baseentry.Length;
+            if (fileByteArray == null)
+                fileByteArray = new byte[count];
+            else
+            {
+                Array.Clear(fileByteArray,0, fileByteArray.Length);
+                Array.Resize(ref fileByteArray, count);
+            }
+            MemoryStream memoryStream = new MemoryStream(fileByteArray);
+            S57map.CopyTo(memoryStream);
+            memoryStream.Dispose();
+
+            using (var reader = new Iso8211Reader(fileByteArray))
             {
                 baseFile = new BaseFile(reader);
+                foreach (var bla in reader.tagcollector)
+                    Console.WriteLine(bla);
             }
             S57map.Dispose();
-            //timer.Stop();
-            //Console.WriteLine(((double)(timer.Elapsed.TotalMilliseconds)).ToString("0.00 ms"));
-            //timer.Start();
+
             if (ApplyUpdates)
             {
                 foreach (var entry in updatefiles)
                 {
                     S57update = entry.Value.Open();
-                    using (var updatereader = new Iso8211Reader(S57update))
+                    count = (int)entry.Value.Length;
+                    Array.Clear(fileByteArray, 0, fileByteArray.Length);
+                    Array.Resize(ref fileByteArray, count);
+                    memoryStream = new MemoryStream(fileByteArray);
+                    S57update.CopyTo(memoryStream);
+                    memoryStream.Dispose();
+                    using (var updatereader = new Iso8211Reader(fileByteArray))
                     {
                         UpdateFile updateFile = new UpdateFile(updatereader);
                         baseFile.ApplyUpdateFile(updateFile);
@@ -117,36 +191,95 @@ namespace S57
                     S57update.Dispose();
                 }
             }
-            //timer.Stop();
-            //Console.WriteLine(((double)(timer.Elapsed.TotalMilliseconds)).ToString("0.00 ms"));
-
-            //cell = new Cell(baseFile);
-            //timer.Start();
+            cellInfo = new Cell(baseFile);
             baseFile.BindVectorPointersOfVectors();
             baseFile.BindVectorPointersOfFeatures();
             baseFile.BuildVectorGeometry();
             baseFile.BindFeatureObjectPointers();
+
         }
+        //public void Read(string RootDirectory, string MapName, bool ApplyUpdates)
+        //{
+        //    if (!RootDirectory.EndsWith("ENC_ROOT"))
+        //    {
+        //        //Console.WriteLine("Selected folder is not ENC_ROOT folder of a Volume");
+        //        return;
+        //    }
+        //    string basename = MapName.Remove(MapName.Length - 4);
+        //    Stream S57map = null;
+        //    string baseentry = null;
+        //    SortedList<uint, string> updatefiles = new SortedList<uint, string>();
+        //    Stream S57update;
+        //    string[] filePaths = Directory.GetFiles(@RootDirectory, "*.*", SearchOption.AllDirectories);
+            
 
-        public void Read(System.IO.Stream stream)
-        {
-            //Stopwatch timer = new Stopwatch();
-            //timer.Start();
-            using (var reader = new Iso8211Reader(stream))
-            {
-                baseFile = new BaseFile(reader);
-            }
-            //timer.Stop();
-            //Console.WriteLine(((double)(timer.Elapsed.TotalMilliseconds)).ToString("0.00 ms"));
-            cell = new Cell(baseFile);
-            //timer.Start();
-            baseFile.BindVectorPointersOfVectors();
-            baseFile.BindVectorPointersOfFeatures();
-            baseFile.BuildVectorGeometry();
-            baseFile.BindFeatureObjectPointers();
-            //timer.Stop();
-            //Console.WriteLine(((double)(timer.Elapsed.TotalMilliseconds)).ToString("0.00 ms"));
-        }    
+        //    foreach (string entry in filePaths)
+        //    {
+        //        if (entry.Contains(basename))
+        //        {
+        //            if (entry.EndsWith(MapName))
+        //            {
+        //                baseentry = entry;
+        //            }
+        //            else
+        //            {
+        //                int val;
+        //                string end = entry.Substring(entry.Length - 3);
+        //                if (char.IsDigit(end[0]) && char.IsDigit(end[1]) && char.IsDigit(end[2]))
+        //                {
+        //                    int.TryParse(end, out val);
+        //                    updatefiles.Add(Convert.ToUInt32(end.ToString()), entry);
+        //                }
+        //            }
+        //        }
+        //    }
+        //    S57map = new FileStream(@baseentry, FileMode.Open, FileAccess.Read, FileShare.Read, 65536);
+        //    using (var reader = new Iso8211Reader(S57map))
+        //    {
+        //        baseFile = new BaseFile(reader);
+        //    }
+
+        //    S57map.Dispose();
+        //    if (ApplyUpdates)
+        //    {
+        //        foreach (var entry in updatefiles)
+        //        {
+        //            S57update = new FileStream(@entry.Value, FileMode.Open);
+        //            using (var updatereader = new Iso8211Reader(S57update))
+        //            {
+        //                UpdateFile updateFile = new UpdateFile(updatereader);
+        //                baseFile.ApplyUpdateFile(updateFile);
+        //            }
+        //            S57update.Dispose();
+        //        }
+        //    }
+        //    cellInfo = new Cell(baseFile);
+        //    baseFile.BindVectorPointersOfVectors();
+        //    baseFile.BindVectorPointersOfFeatures();
+        //    baseFile.BuildVectorGeometry();
+        //    baseFile.BindFeatureObjectPointers();
+        //}
+
+
+        //public void Read(System.IO.Stream stream)
+        //{
+        //    //Stopwatch timer = new Stopwatch();
+        //    //timer.Start();
+        //    using (var reader = new Iso8211Reader(stream))
+        //    {
+        //        baseFile = new BaseFile(reader);
+        //    }
+        //    //timer.Stop();
+        //    //Console.WriteLine(((double)(timer.Elapsed.TotalMilliseconds)).ToString("0.00 ms"));
+        //    cellInfo = new Cell(baseFile);
+        //    //timer.Start();
+        //    baseFile.BindVectorPointersOfVectors();
+        //    baseFile.BindVectorPointersOfFeatures();
+        //    baseFile.BuildVectorGeometry();
+        //    baseFile.BindFeatureObjectPointers();
+        //    //timer.Stop();
+        //    //Console.WriteLine(((double)(timer.Elapsed.TotalMilliseconds)).ToString("0.00 ms"));
+        //}    
 
         private void BuildCatalogue()
         {

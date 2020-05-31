@@ -19,8 +19,8 @@ namespace S57
         public double easternMostLongitude;
 
         // some private variables  
-        object[] subFieldRow;
-        Dictionary<string, int> tagLookup;
+        SFcontainer[] subFieldRow;
+        List<string> tagLookup;
 
         public DataRecord DataRecord
         {
@@ -42,13 +42,13 @@ namespace S57
             {
                 subFieldRow = catd.subFields.Values[0];
                 tagLookup = catd.subFields.TagIndex;
-                RecordIdentificationNumber = subFieldRow.GetUInt32(tagLookup["RCID"]); //this one ist stored as integer, so implementing GetUint32 to do merely a cast will fail
-                fileName = subFieldRow.GetString(tagLookup["FILE"]);
-                fileLongName = subFieldRow.GetString(tagLookup["LFIL"]);                
-                southernMostLatitude = subFieldRow.GetDouble(tagLookup["SLAT"]);
-                westernMostLongitude = subFieldRow.GetDouble(tagLookup["WLON"]);
-                northernMostLatitude = subFieldRow.GetDouble(tagLookup["NLAT"]);
-                easternMostLongitude = subFieldRow.GetDouble(tagLookup["ELON"]);
+                RecordIdentificationNumber = (uint)subFieldRow.GetInt32(tagLookup.IndexOf("RCID")); //this one ist stored as integer, so implementing GetUint32 to do merely a cast will fail
+                fileName = subFieldRow.GetString(tagLookup.IndexOf("FILE"));
+                fileLongName = subFieldRow.GetString(tagLookup.IndexOf("LFIL"));                
+                southernMostLatitude = subFieldRow.GetDouble(tagLookup.IndexOf("SLAT"));
+                westernMostLongitude = subFieldRow.GetDouble(tagLookup.IndexOf("WLON"));
+                northernMostLatitude = subFieldRow.GetDouble(tagLookup.IndexOf("NLAT"));
+                easternMostLongitude = subFieldRow.GetDouble(tagLookup.IndexOf("ELON"));
             }   
         }        
     }

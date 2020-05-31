@@ -56,8 +56,8 @@ namespace S57.File
         DataField vrid, frid;
         uint rcnm;
         uint rcid;
-        object[] subFieldRow;
-        Dictionary<string, int> tagLookup;
+        SFcontainer[] subFieldRow;
+        List<string> tagLookup;
 
         public BaseFile(Iso8211Reader reader)
         {
@@ -68,17 +68,17 @@ namespace S57.File
             {
                 subFieldRow = dssi.subFields.Values[0];
                 tagLookup = dssi.subFields.TagIndex;
-                vectorDataStructure = (VectorDataStructure)subFieldRow.GetUInt32(tagLookup["DSTR"]);
-                ATTFLexicalLevel = (S57LexicalLevel)subFieldRow.GetUInt32(tagLookup["AALL"]);
-                NATFLexicalLevel = (S57LexicalLevel)subFieldRow.GetUInt32(tagLookup["NALL"]);
-                numberOfMetaRecords = subFieldRow.GetUInt32(tagLookup["NOMR"]);
-                numberOfCartographicRecords = subFieldRow.GetUInt32(tagLookup["NOCR"]);
-                numberOfGeoRecords = subFieldRow.GetUInt32(tagLookup["NOGR"]);
-                numberOfCollectionRecords = subFieldRow.GetUInt32(tagLookup["NOLR"]);
-                numberOfIsolatedNodeRecords = subFieldRow.GetUInt32(tagLookup["NOIN"]);
-                numberOfConnectedNodeRecords = subFieldRow.GetUInt32(tagLookup["NOCN"]);
-                numberOfEdgeRecords = subFieldRow.GetUInt32(tagLookup["NOED"]);
-                numberOfFaceRecords = subFieldRow.GetUInt32(tagLookup["NOFA"]);
+                vectorDataStructure = (VectorDataStructure)subFieldRow.GetUInt32(tagLookup.IndexOf("DSTR"));
+                ATTFLexicalLevel = (S57LexicalLevel)subFieldRow.GetUInt32(tagLookup.IndexOf("AALL"));
+                NATFLexicalLevel = (S57LexicalLevel)subFieldRow.GetUInt32(tagLookup.IndexOf("NALL"));
+                numberOfMetaRecords = subFieldRow.GetUInt32(tagLookup.IndexOf("NOMR"));
+                numberOfCartographicRecords = subFieldRow.GetUInt32(tagLookup.IndexOf("NOCR"));
+                numberOfGeoRecords = subFieldRow.GetUInt32(tagLookup.IndexOf("NOGR"));
+                numberOfCollectionRecords = subFieldRow.GetUInt32(tagLookup.IndexOf("NOLR"));
+                numberOfIsolatedNodeRecords = subFieldRow.GetUInt32(tagLookup.IndexOf("NOIN"));
+                numberOfConnectedNodeRecords = subFieldRow.GetUInt32(tagLookup.IndexOf("NOCN"));
+                numberOfEdgeRecords = subFieldRow.GetUInt32(tagLookup.IndexOf("NOED"));
+                numberOfFaceRecords = subFieldRow.GetUInt32(tagLookup.IndexOf("NOFA"));
             }
 
             DataSetGeographicReferenceRecord = reader.ReadDataRecord();
@@ -87,16 +87,16 @@ namespace S57.File
             {
                 subFieldRow = dspm.subFields.Values[0];
                 tagLookup = dspm.subFields.TagIndex;
-                horizontalGeodeticDatum = subFieldRow.GetUInt32(tagLookup["HDAT"]);
-                verticalDatum = subFieldRow.GetUInt32(tagLookup["VDAT"]);
-                soundingDatum = subFieldRow.GetUInt32(tagLookup["SDAT"]);
-                compilationScaleOfData = subFieldRow.GetUInt32(tagLookup["CSCL"]);
-                unitsOfDepthMeasurement = subFieldRow.GetUInt32(tagLookup["DUNI"]);
-                unitsOfHeightMeasurement = subFieldRow.GetUInt32(tagLookup["HUNI"]);
-                unitsOfPositionalAccuracy = subFieldRow.GetUInt32(tagLookup["PUNI"]);
-                coordinateUnits = (CoordinateUnits)subFieldRow.GetUInt32(tagLookup["COUN"]);
-                coordinateMultiplicationFactor = subFieldRow.GetUInt32(tagLookup["COMF"]);
-                soundingMultiplicationFactor = subFieldRow.GetUInt32(tagLookup["SOMF"]);
+                horizontalGeodeticDatum = subFieldRow.GetUInt32(tagLookup.IndexOf("HDAT"));
+                verticalDatum = subFieldRow.GetUInt32(tagLookup.IndexOf("VDAT"));
+                soundingDatum = subFieldRow.GetUInt32(tagLookup.IndexOf("SDAT"));
+                compilationScaleOfData = subFieldRow.GetUInt32(tagLookup.IndexOf("CSCL"));
+                unitsOfDepthMeasurement = subFieldRow.GetUInt32(tagLookup.IndexOf("DUNI"));
+                unitsOfHeightMeasurement = subFieldRow.GetUInt32(tagLookup.IndexOf("HUNI"));
+                unitsOfPositionalAccuracy = subFieldRow.GetUInt32(tagLookup.IndexOf("PUNI"));
+                coordinateUnits = (CoordinateUnits)subFieldRow.GetUInt32(tagLookup.IndexOf("COUN"));
+                coordinateMultiplicationFactor = subFieldRow.GetUInt32(tagLookup.IndexOf("COMF"));
+                soundingMultiplicationFactor = subFieldRow.GetUInt32(tagLookup.IndexOf("SOMF"));
                 // COMT
             }
 
@@ -146,7 +146,7 @@ namespace S57.File
             {
                 if (eVec.Value.enhVectorPtrs != null)
                 {
-                    int name = eVec.Value.enhVectorPtrs.TagIndex["NAME"];
+                    int name = eVec.Value.enhVectorPtrs.TagIndex.IndexOf("NAME");
                     eVec.Value.enhVectorPtrs.VectorList = new List<Vector>(); //to ensure updates do not extend the list
                     foreach (var ptr in eVec.Value.enhVectorPtrs.Values)
                     {
@@ -162,7 +162,7 @@ namespace S57.File
             {
                 if (eFeat.Value.enhVectorPtrs != null)
                 {
-                    int name = eFeat.Value.enhVectorPtrs.TagIndex["NAME"];
+                    int name = eFeat.Value.enhVectorPtrs.TagIndex.IndexOf("NAME");
                     eFeat.Value.enhVectorPtrs.VectorList = new List<Vector>(); //to ensure updates do not extend the list
                     foreach (var ptr in eFeat.Value.enhVectorPtrs.Values)
                     {
@@ -184,7 +184,7 @@ namespace S57.File
             {
                 if (eFeat.Value.enhFeaturePtrs != null)
                 {
-                    int lnam = eFeat.Value.enhFeaturePtrs.TagIndex["LNAM"];
+                    int lnam = eFeat.Value.enhFeaturePtrs.TagIndex.IndexOf("LNAM");
                     eFeat.Value.enhFeaturePtrs.FeatureList = new List<Feature>(); //to ensure updates do not extend the list
                     foreach (var ptr in eFeat.Value.enhFeaturePtrs.Values)
                     {
@@ -265,9 +265,9 @@ namespace S57.File
             if (sg3d != null)
             {
                 eVec.Value.SoundingList = new List<SoundingData>();
-                int ycoo = sg3d.subFields.TagIndex["YCOO"];
-                int xcoo = sg3d.subFields.TagIndex["XCOO"];
-                int ve3d = sg3d.subFields.TagIndex["VE3D"];
+                int ycoo = sg3d.subFields.TagIndex.IndexOf("YCOO");
+                int xcoo = sg3d.subFields.TagIndex.IndexOf("XCOO");
+                int ve3d = sg3d.subFields.TagIndex.IndexOf("VE3D");
                 for (int i = 0; i < sg3d.subFields.Values.Count; i++)
                 {
                     var point = new SoundingData();
@@ -282,8 +282,8 @@ namespace S57.File
         private Point GetNodeGeometry(DataField sg2d)
         {
             Point point = new Point();
-            int ycoo = sg2d.subFields.TagIndex["YCOO"];
-            int xcoo = sg2d.subFields.TagIndex["XCOO"];
+            int ycoo = sg2d.subFields.TagIndex.IndexOf("YCOO");
+            int xcoo = sg2d.subFields.TagIndex.IndexOf("XCOO");
             subFieldRow = sg2d.subFields.Values[0];
             point.Y = subFieldRow.GetDouble(ycoo) / coordinateMultiplicationFactor;
             point.X = subFieldRow.GetDouble(xcoo) / coordinateMultiplicationFactor;
@@ -292,8 +292,8 @@ namespace S57.File
         private Line GetFaceGeometry(KeyValuePair<NAMEkey, Vector> _eVec, DataField sg2d)
         {
             Line line = new Line();
-            int ycoo = sg2d.subFields.TagIndex["YCOO"];
-            int xcoo = sg2d.subFields.TagIndex["XCOO"];
+            int ycoo = sg2d.subFields.TagIndex.IndexOf("YCOO");
+            int xcoo = sg2d.subFields.TagIndex.IndexOf("XCOO");
             line.points.Add(_eVec.Value.enhVectorPtrs.VectorList[0].geometry as Point); //will fail when geometry of pointed Vector has not been calculated yet
             for (int i = 0; i < sg2d.subFields.Values.Count; i++)
             {
@@ -333,7 +333,7 @@ namespace S57.File
             RecordUpdate fsui;
             int fsix, nspt;
 
-            object[] target_row;
+            SFcontainer[] target_row;
 
             //throw new NotImplementedException("ApplyUpdateFile not implemented");
             foreach (DataRecord vr in updateFile.UpdateVectorRecords)
@@ -342,10 +342,10 @@ namespace S57.File
                 vrid = vr.Fields.GetFieldByTag("VRID");
                 subFieldRow = vrid.subFields.Values[0];
                 tagLookup = vrid.subFields.TagIndex;
-                rcnm = subFieldRow.GetUInt32(tagLookup["RCNM"]);
-                rcid = subFieldRow.GetUInt32(tagLookup["RCID"]);
-                rver = subFieldRow.GetUInt32(tagLookup["RVER"]);
-                ruin = (RecordUpdate)subFieldRow.GetUInt32(tagLookup["RUIN"]);
+                rcnm = subFieldRow.GetUInt32(tagLookup.IndexOf("RCNM"));
+                rcid = subFieldRow.GetUInt32(tagLookup.IndexOf("RCID"));
+                rver = subFieldRow.GetUInt32(tagLookup.IndexOf("RVER"));
+                ruin = (RecordUpdate)subFieldRow.GetUInt32(tagLookup.IndexOf("RUIN"));
                 NAMEkey updateNAMEkey = new NAMEkey(rcnm, rcid);
                 if (ruin == RecordUpdate.Insert)
                 {
@@ -377,10 +377,10 @@ namespace S57.File
                             }
                             else
                             {
-                                attl = attv.subFields.TagIndex["ATTL"];
-                                target_attl = target_attv.subFields.TagIndex["ATTL"];
-                                atvl = attv.subFields.TagIndex["ATVL"];
-                                target_atvl = target_attv.subFields.TagIndex["ATVL"];
+                                attl = attv.subFields.TagIndex.IndexOf("ATTL");
+                                target_attl = target_attv.subFields.TagIndex.IndexOf("ATTL");
+                                atvl = attv.subFields.TagIndex.IndexOf("ATVL");
+                                target_atvl = target_attv.subFields.TagIndex.IndexOf("ATVL");
                                 foreach (var row in attv.subFields.Values)
                                 {
                                     attribute_found = false;
@@ -484,7 +484,7 @@ namespace S57.File
                                 }
                             }
                         }
-                        target_vrid.subFields.Values[0][target_vrid.subFields.TagIndex["RVER"]] = rver;
+                        target_vrid.subFields.Values[0][target_vrid.subFields.TagIndex.IndexOf("RVER")].uintValue = rver;
                     }
                 }
             }
@@ -495,10 +495,10 @@ namespace S57.File
                 frid = fr.Fields.GetFieldByTag("FRID");
                 subFieldRow = frid.subFields.Values[0];
                 tagLookup = frid.subFields.TagIndex;
-                rcnm = subFieldRow.GetUInt32(tagLookup["RCNM"]);
-                rcid = subFieldRow.GetUInt32(tagLookup["RCID"]);
-                rver = subFieldRow.GetUInt32(tagLookup["RVER"]);
-                ruin = (RecordUpdate)subFieldRow.GetUInt32(tagLookup["RUIN"]);
+                rcnm = subFieldRow.GetUInt32(tagLookup.IndexOf("RCNM"));
+                rcid = subFieldRow.GetUInt32(tagLookup.IndexOf("RCID"));
+                rver = subFieldRow.GetUInt32(tagLookup.IndexOf("RVER"));
+                ruin = (RecordUpdate)subFieldRow.GetUInt32(tagLookup.IndexOf("RUIN"));
                 NAMEkey updateNAMEkey = new NAMEkey(rcnm, rcid);
                 if (ruin == RecordUpdate.Insert)
                 {
@@ -531,10 +531,10 @@ namespace S57.File
                             }
                             else
                             {
-                                attl = attf.subFields.TagIndex["ATTL"];
-                                target_attl = target_attf.subFields.TagIndex["ATTL"];
-                                atvl = attf.subFields.TagIndex["ATVL"];
-                                target_atvl = target_attf.subFields.TagIndex["ATVL"];
+                                attl = attf.subFields.TagIndex.IndexOf("ATTL");
+                                target_attl = target_attf.subFields.TagIndex.IndexOf("ATTL");
+                                atvl = attf.subFields.TagIndex.IndexOf("ATVL");
+                                target_atvl = target_attf.subFields.TagIndex.IndexOf("ATVL");
                                 foreach (var row in attf.subFields.Values)
                                 {
                                     attribute_found = false;
@@ -567,10 +567,10 @@ namespace S57.File
                             }
                             else
                             {
-                                attl = natf.subFields.TagIndex["ATTL"];
-                                target_attl = target_natf.subFields.TagIndex["ATTL"];
-                                atvl = natf.subFields.TagIndex["ATVL"];
-                                target_atvl = target_natf.subFields.TagIndex["ATVL"];
+                                attl = natf.subFields.TagIndex.IndexOf("ATTL");
+                                target_attl = target_natf.subFields.TagIndex.IndexOf("ATTL");
+                                atvl = natf.subFields.TagIndex.IndexOf("ATVL");
+                                target_atvl = target_natf.subFields.TagIndex.IndexOf("ATVL");
                                 foreach (var row in natf.subFields.Values)
                                 {
                                     attribute_found = false;
@@ -670,7 +670,7 @@ namespace S57.File
                                 }
                             }
                         }
-                        target_frid.subFields.Values[0][target_frid.subFields.TagIndex["RVER"]] = rver;
+                        target_frid.subFields.Values[0][target_frid.subFields.TagIndex.IndexOf("RVER")].uintValue = rver;
                     }
                 }
             }

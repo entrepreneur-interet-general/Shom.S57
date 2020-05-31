@@ -47,8 +47,8 @@ namespace S57
                     geometry = new Line();
                     if (enhVectorPtrs != null)
                     {
-                        int mask = enhVectorPtrs.TagIndex["MASK"];
-                        int name = enhVectorPtrs.TagIndex["NAME"];
+                        int mask = enhVectorPtrs.TagIndex.IndexOf("MASK");
+                        int name = enhVectorPtrs.TagIndex.IndexOf("NAME");
                         for (int i = 0; i < enhVectorPtrs.Values.Count; i++)
                         {
                             if (enhVectorPtrs.Values[i].GetUInt32(mask) == (uint)Masking.Show ||
@@ -82,12 +82,12 @@ namespace S57
         }
         public static Dictionary<S57Att, string> GetAttributes(DataField field)
         {
-            object[] subFieldRow;
+            SFcontainer[] subFieldRow;
             if (field.Tag == "ATTF" || field.Tag == "NATF" || field.Tag == "ATTV")
             {
                 Dictionary<S57Att, string> values = new Dictionary<S57Att, string>();
-                int attl = field.subFields.TagIndex["ATTL"];
-                int atvl = field.subFields.TagIndex["ATVL"];
+                int attl = field.subFields.TagIndex.IndexOf("ATTL");
+                int atvl = field.subFields.TagIndex.IndexOf("ATVL");
                 for (int i = 0; i < field.subFields.Values.Count; i++)
                 {
                     subFieldRow = field.subFields.Values[i];

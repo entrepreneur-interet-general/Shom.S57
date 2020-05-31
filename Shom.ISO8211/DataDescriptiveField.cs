@@ -15,7 +15,7 @@ namespace Shom.ISO8211
         public bool IsVector;
         public List<SubFieldDefinition> SubFieldDefinitions = new List<SubFieldDefinition>();
 
-        public DataDescriptiveField(string tag, byte[] fieldControls, string dataFieldName, string arrayDescriptor,
+        public DataDescriptiveField(string tag, ArraySegment<byte> fieldControls, string dataFieldName, string arrayDescriptor,
                                     string formatControls) : base(tag, fieldControls)
         {
             _dataFieldName = dataFieldName;

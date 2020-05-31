@@ -6,14 +6,15 @@ namespace Shom.ISO8211
 {
     public class RecordDirectory : List<DirectoryEntry>
     {
-        public RecordDirectory(int sizeOfTagField, int sizeOfLengthField, int sizeOfPositionField, byte[] bytes)
+        public RecordDirectory(int sizeOfTagField, int sizeOfLengthField, int sizeOfPositionField, ArraySegment<byte> bytes)
         {
             int currentIndex = 0;
+            int _offset = bytes.Offset;
             int start = 0;
-            while (currentIndex < bytes.Length - 1) // -1 excludes the FieldTerminator
+            while (currentIndex < bytes.Count - 1) // -1 excludes the FieldTerminator
             {        
                 start = currentIndex;
-                string tag  = Encoding.ASCII.GetString(bytes, start, sizeOfTagField);
+                string tag = Encoding.ASCII.GetString(bytes.Array, _offset + start, sizeOfTagField);
                 currentIndex += sizeOfTagField;
 
                 var entry = new DirectoryEntry();
@@ -21,12 +22,12 @@ namespace Shom.ISO8211
 
                 for (int i = 0; i < sizeOfLengthField; i++)
                 {
-                    entry.FieldLength += ((bytes[currentIndex] - '0') * (int)Math.Pow(10, sizeOfLengthField - i - 1));
+                    entry.FieldLength += ((bytes.Array[_offset + currentIndex] - '0') * (int)Math.Pow(10, sizeOfLengthField - i - 1));
                     currentIndex++;
                 }
                 for (int i = 0; i < sizeOfPositionField; i++)
                 {
-                    entry.FieldPosition += ((bytes[currentIndex] - '0') * (int)Math.Pow(10, sizeOfPositionField - i - 1));
+                    entry.FieldPosition += ((bytes.Array[_offset + currentIndex] - '0') * (int)Math.Pow(10, sizeOfPositionField - i - 1));
                     currentIndex++;
                 }
                 Add(entry);

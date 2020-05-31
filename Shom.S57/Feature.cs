@@ -33,8 +33,8 @@ namespace S57
         uint agen;
         uint fidn;
         uint fids;
-        object[] subFieldRow;
-        Dictionary<string, int> tagLookup;
+        SFcontainer[] subFieldRow;
+        List<string> tagLookup;
 
         public List<Dictionary<S57Att, string>> GetSpacialAttributes()
         {
@@ -90,8 +90,8 @@ namespace S57
                         {
                             //first, check if vector exist, and if it is supposed to be visible 
                             //(to improve: masked points should still be added for correct topology, just not rendered later)
-                            int mask = enhVectorPtrs.TagIndex["MASK"];
-                            int ornt = enhVectorPtrs.TagIndex["ORNT"];
+                            int mask = enhVectorPtrs.TagIndex.IndexOf("MASK");
+                            int ornt = enhVectorPtrs.TagIndex.IndexOf("ORNT");
                             if (enhVectorPtrs.VectorList[i] == null || enhVectorPtrs.Values[i].GetUInt32(mask) == (uint)Masking.Mask) break;
 
                             //next, check if edge needs to be reversed for the intended usage 
@@ -142,8 +142,8 @@ namespace S57
                             {
                                 //first, check if vector exist, and if it is supposed to be visible
                                 //(to improve: masked points should still be added for correct topology, just not rendered later)
-                                int mask = enhVectorPtrs.TagIndex["MASK"];
-                                int ornt = enhVectorPtrs.TagIndex["ORNT"];
+                                int mask = enhVectorPtrs.TagIndex.IndexOf("MASK");
+                                int ornt = enhVectorPtrs.TagIndex.IndexOf("ORNT");
                                 if (enhVectorPtrs.VectorList[i] == null || enhVectorPtrs.Values[i].GetUInt32(mask) == (uint)Masking.Mask) break;
 
                                 //next, check if edge needs to be reversed for the intended usage 
@@ -206,8 +206,8 @@ namespace S57
                             {
                                 //first, check if vector exist, and if it is supposed to be visible
                                 //(to improve: masked points should still be added for correct topology, just not rendered later)
-                                int mask = enhVectorPtrs.TagIndex["MASK"];
-                                int ornt = enhVectorPtrs.TagIndex["ORNT"];
+                                int mask = enhVectorPtrs.TagIndex.IndexOf("MASK");
+                                int ornt = enhVectorPtrs.TagIndex.IndexOf("ORNT");
                                 if (enhVectorPtrs.VectorList[i] == null || enhVectorPtrs.Values[i].GetUInt32(mask) == (uint)Masking.Mask) break;
 
                                 //next, check if edge needs to be reversed for the intended usage 
@@ -294,9 +294,9 @@ namespace S57
             {
                 subFieldRow = foid.subFields.Values[0];
                 tagLookup = foid.subFields.TagIndex;
-                agen = subFieldRow.GetUInt32(tagLookup["AGEN"]);
-                fidn = subFieldRow.GetUInt32(tagLookup["FIDN"]);
-                fids = subFieldRow.GetUInt32(tagLookup["FIDS"]);
+                agen = subFieldRow.GetUInt32(tagLookup.IndexOf("AGEN"));
+                fidn = subFieldRow.GetUInt32(tagLookup.IndexOf("FIDN"));
+                fids = subFieldRow.GetUInt32(tagLookup.IndexOf("FIDS"));
                 lnam = new LongName(agen, fidn, fids);
             }
             // ATTF : Attributes

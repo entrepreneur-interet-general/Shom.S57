@@ -10,13 +10,16 @@ namespace Shom.ISO8211
         private const byte UnitTerminator = 0x1F;
         private const byte FieldTerminator = 0x1E;
         const int sizeOfRecordLeader = 24;
-        byte[] readRecord = new byte[sizeOfRecordLeader];
+        int currentFileOffset;
+        ArraySegment<byte> readRecord;
+        public List<string> tagcollector=new List<string>();
 
-        private readonly BufferedBinaryReader bufferedReader;
-        public Iso8211Reader(Stream stream)
+        private readonly byte[] m_fileByteArray;
+        public Iso8211Reader(byte[] FileByteArray)
         {
-            bufferedReader = new BufferedBinaryReader(stream, 4096);
 
+            m_fileByteArray = FileByteArray;
+            currentFileOffset = 0;
             //First record in the file is always the Data Descriptive Record
             DataDescriptiveRecord = ReadDataDescriptiveRecord();
         }
@@ -27,7 +30,8 @@ namespace Shom.ISO8211
         private DataDescriptiveRecord ReadDataDescriptiveRecord()
         {
             var rec = new DataDescriptiveRecord();
-            readRecord = bufferedReader.ReadBytes(sizeOfRecordLeader); 
+            readRecord = new ArraySegment<byte>(m_fileByteArray, currentFileOffset, sizeOfRecordLeader);
+            currentFileOffset += sizeOfRecordLeader;
             rec.Leader = ReadRecordLeader(readRecord);
             rec.Directory = ReadRecordDirectory(rec.Leader);
             if (rec.Leader.LeaderIdentifier != 'L')
@@ -41,12 +45,13 @@ namespace Shom.ISO8211
 
         public DataRecord ReadDataRecord()
         {
-            var rec = new DataRecord();
-            readRecord = bufferedReader.ReadBytes(sizeOfRecordLeader);
-            if (readRecord.Length < sizeOfRecordLeader)  //detect  stream end when readbytes returns 0 works with stream of known length (e.g. files) and unknown length
+            if (m_fileByteArray.Length - currentFileOffset < sizeOfRecordLeader) //detect  stream end when readbytes returns 0 works with stream of known length (e.g. files) and unknown length
                 return null;
             else
             {
+                var rec = new DataRecord();
+                readRecord = new ArraySegment<byte>(m_fileByteArray, currentFileOffset, sizeOfRecordLeader);
+                currentFileOffset += sizeOfRecordLeader;
                 rec.Leader = ReadRecordLeader(readRecord);
                 rec.Directory = ReadRecordDirectory(rec.Leader);
                 rec.Fields = ReadDataRecordFields(rec.Leader, rec.Directory);
@@ -54,32 +59,27 @@ namespace Shom.ISO8211
             }
         }
 
-        private RecordLeader ReadRecordLeader(byte[] readRecord)
+        private RecordLeader ReadRecordLeader(ArraySegment<byte> readRecord)
         {
             return new RecordLeader(readRecord);
         }
 
         private RecordDirectory ReadRecordDirectory(RecordLeader leader)
         {
-            return new RecordDirectory(leader.EntryMap.SizeOfTagField, leader.EntryMap.SizeOfLengthField,
-                                       leader.EntryMap.SizeOfPositionField, ReadBytesToFieldTerminator());
-        }
-
-        private byte[] ReadBytesToFieldTerminator()
-        {
-            var bytes = new List<byte>();
-
-            byte nextByte;
-
-            do
+            int count = 0;
+            for (int i = currentFileOffset; i < m_fileByteArray.Length; i++)
             {
-                nextByte = bufferedReader.ReadByte();
-                bytes.Add(nextByte);
-            } while (nextByte != FieldTerminator);
-
-            return bytes.ToArray();
+                if (m_fileByteArray[currentFileOffset + count] == FieldTerminator)
+                {
+                    break;
+                }
+                count++;
+            }
+            ArraySegment<byte> bytes = new ArraySegment<byte>(m_fileByteArray, currentFileOffset, count);
+            currentFileOffset += count+1;
+            return new RecordDirectory(leader.EntryMap.SizeOfTagField, leader.EntryMap.SizeOfLengthField,
+                           leader.EntryMap.SizeOfPositionField, bytes);
         }
-
         private DataDescriptiveRecordFields ReadDataDescriptiveRecordFields(RecordLeader leader, RecordDirectory directory)
         {
             var fieldArea = new DataDescriptiveRecordFields();
@@ -113,7 +113,9 @@ namespace Shom.ISO8211
                 if (isFileControlField)
                 {
                     //This is a special field tag - the file control field
-                    byte[] fieldControls = bufferedReader.ReadBytes(leader.FieldControlLength);
+                    //byte[] fieldControls = bufferedReader.ReadBytes(leader.FieldControlLength);
+                    ArraySegment<byte> fieldControls = new ArraySegment<byte>(m_fileByteArray, currentFileOffset, leader.FieldControlLength);
+                    currentFileOffset += leader.FieldControlLength;
                     string externalFileTitle = ReadStringToTerminator();
                     string listOfFieldTagPairs = ReadStringToTerminator();
                     var fcf = new FileControlField( entry.FieldTag, fieldControls, externalFileTitle, listOfFieldTagPairs, leader.EntryMap.SizeOfTagField );
@@ -122,7 +124,9 @@ namespace Shom.ISO8211
                 }
                 else
                 {
-                    byte[] fieldControls = bufferedReader.ReadBytes(leader.FieldControlLength);
+                   //byte[] fieldControls = bufferedReader.ReadBytes(leader.FieldControlLength);
+                    ArraySegment<byte> fieldControls = new ArraySegment<byte>(m_fileByteArray, currentFileOffset, leader.FieldControlLength);
+                    currentFileOffset += leader.FieldControlLength;
                     string dataFieldName = ReadStringToTerminator();
                     string arrayDescriptor = ReadStringToTerminator();
                     string formatControls = ReadStringToTerminator();
@@ -164,7 +168,10 @@ namespace Shom.ISO8211
                     throw new Exception("Unable to find data descriptive field");
                 }
 
-                var df = new DataField(entry.FieldTag, (DataDescriptiveField)dataDescriptiveField, bufferedReader.ReadBytes(entry.FieldLength));
+                ArraySegment<byte> temp = new ArraySegment<byte>(m_fileByteArray, currentFileOffset, entry.FieldLength);
+                currentFileOffset += entry.FieldLength;
+
+                var df = new DataField(entry.FieldTag, (DataDescriptiveField)dataDescriptiveField, temp);
 
                 fieldArea.Add(df);
             }
@@ -174,15 +181,19 @@ namespace Shom.ISO8211
 
         private string ReadStringToTerminator()
         {
-            var sb = new StringBuilder();
-
-            byte nextByte = bufferedReader.ReadByte();
-            while (!(nextByte == UnitTerminator || nextByte == FieldTerminator))
+            int count = 0;
+            for(int i = currentFileOffset; i<m_fileByteArray.Length; i++)
             {
-                sb.Append((char) nextByte);
-                nextByte = bufferedReader.ReadByte();
+                if (m_fileByteArray[currentFileOffset + count] == FieldTerminator || m_fileByteArray[currentFileOffset + count] == UnitTerminator)
+                {
+                    break;
+                }
+                count++;
             }
-            return sb.ToString();
+            ArraySegment<byte> bytes = new ArraySegment<byte>(m_fileByteArray, currentFileOffset, count);
+            string temp = Encoding.ASCII.GetString(bytes.Array, bytes.Offset, count);
+            currentFileOffset += count+1;
+            return temp;
         }
 
         public void Dispose()
@@ -195,11 +206,11 @@ namespace Shom.ISO8211
         {
             if (disposing)
             {
-                // free managed resources
-                if (bufferedReader != null)
-                {
-                    bufferedReader.Dispose();
-                }
+                //// free managed resources
+                //if (bufferedReader != null)
+                //{
+                //    bufferedReader.Dispose();
+                //}
             }
         }
 

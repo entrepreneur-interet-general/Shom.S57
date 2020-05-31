@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 
 namespace Shom.ISO8211
 {
@@ -15,36 +16,41 @@ namespace Shom.ISO8211
         public char FieldTerminatorPrintableGraphic;
         public char[] TruncatedEscapeSequence = new char[3];
         public ISO8211LexicalLevel iso8211LexicalLevel;
+        public Encoding iso8859Encoding; // to chache iso8859 encoding (get encoding is pretty expensive)
         public char UnitTerminatorPrintableGraphic;
         int val;
 
-        public DataDescriptiveRecordField(string tag, byte[] fieldControls) : base(tag)
+        public DataDescriptiveRecordField(string tag, ArraySegment<byte> fieldControls) : base(tag)
         {
-            val = (fieldControls[0]-'0');
+            int _offset = fieldControls.Offset;
+            val = (fieldControls.Array[_offset+0] -'0');
             DataStructureCode = (DataStructureCode) val;
 
-            val = (fieldControls[1] - '0');
+            val = (fieldControls.Array[_offset+1] - '0');
             DataTypeCode = (DataTypeCode) val;
 
-            if (DataTypeCode == DataTypeCode.BitStringIncludingBinaryForms && (char) fieldControls[2] != '0' &&
-                (char) fieldControls[3] != '0')
+            if (DataTypeCode == DataTypeCode.BitStringIncludingBinaryForms && (char) fieldControls.Array[_offset+2] != '0' &&
+                (char) fieldControls.Array[_offset+3] != '0')
             {
                 throw new NotImplementedException("Processing Auxillary controls in Field Controls");
             }
 
-            FieldTerminatorPrintableGraphic = (char) fieldControls[4];
-            UnitTerminatorPrintableGraphic = (char) fieldControls[5];
+            FieldTerminatorPrintableGraphic = (char) fieldControls.Array[_offset+4];
+            UnitTerminatorPrintableGraphic = (char) fieldControls.Array[_offset + 5];
 
-            if (fieldControls.Length > 6)
+            if (fieldControls.Count > 6)
             {
-                TruncatedEscapeSequence[0] = (char)fieldControls[6];
-                TruncatedEscapeSequence[1] = (char)fieldControls[7];
-                TruncatedEscapeSequence[2] = (char)fieldControls[8];
-                     if (fieldControls[6] == 0x20 && fieldControls[7] == 0x20 && fieldControls[8] == 0x20) //Space Space Space 
+TruncatedEscapeSequence[0] = (char)fieldControls.Array[_offset + 6];
+                TruncatedEscapeSequence[1] = (char)fieldControls.Array[_offset + 7];
+                TruncatedEscapeSequence[2] = (char)fieldControls.Array[_offset + 8];
+                if (fieldControls.Array[_offset + 6] == 0x20 && fieldControls.Array[_offset + 7] == 0x20 && fieldControls.Array[_offset + 8] == 0x20) //Space Space Space 
                     iso8211LexicalLevel = ISO8211LexicalLevel.ASCIIText;
-                else if (fieldControls[6] == 0x2D && fieldControls[7] == 0x41 && fieldControls[8] == 0x20) //hyphen A Space
+                else if (fieldControls.Array[_offset + 6] == 0x2D && fieldControls.Array[_offset + 7] == 0x41 && fieldControls.Array[_offset + 8] == 0x20) //hyphen A Space
+                {
+                    iso8859Encoding = Encoding.GetEncoding("iso-8859-1");
                     iso8211LexicalLevel = ISO8211LexicalLevel.ISO8859;
-                else if (fieldControls[6] == 0x25 && fieldControls[7] == 0x2F && fieldControls[8] == 0x41) // percent slash A
+                }
+                else if (fieldControls.Array[_offset + 6] == 0x25 && fieldControls.Array[_offset + 7] == 0x2F && fieldControls.Array[_offset + 8] == 0x41) // percent slash A
                     iso8211LexicalLevel = ISO8211LexicalLevel.ISO10646;
             }
         }
