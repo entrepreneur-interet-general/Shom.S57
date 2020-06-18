@@ -27,8 +27,8 @@ namespace S57.File
         public uint soundingDatum;
 
         // some private variables  
-        object[] subFieldRow;
-        Dictionary<string, int> tagLookup;
+        SFcontainer[] subFieldRow;
+        List<string> tagLookup;
 
         public ProductInfo(Iso8211Reader reader)
         {
@@ -44,16 +44,16 @@ namespace S57.File
             {
                 subFieldRow = dspm.subFields.Values[0];
                 tagLookup = dspm.subFields.TagIndex;
-                horizontalGeodeticDatum = subFieldRow.GetUInt32(tagLookup["HDAT"]);
-                verticalDatum = subFieldRow.GetUInt32(tagLookup["VDAT"]);
-                soundingDatum = subFieldRow.GetUInt32(tagLookup["SDAT"]);
-                compilationScaleOfData = subFieldRow.GetUInt32(tagLookup["CSCL"]);
-                unitsOfDepthMeasurement = subFieldRow.GetUInt32(tagLookup["DUNI"]);
-                unitsOfHeightMeasurement = subFieldRow.GetUInt32(tagLookup["HUNI"]);
-                unitsOfPositionalAccuracy = subFieldRow.GetUInt32(tagLookup["PUNI"]);
-                coordinateUnits = (CoordinateUnits)subFieldRow.GetUInt32(tagLookup["COUN"]);
-                coordinateMultiplicationFactor = subFieldRow.GetUInt32(tagLookup["COMF"]);
-                soundingMultiplicationFactor = subFieldRow.GetUInt32(tagLookup["SOMF"]);
+                horizontalGeodeticDatum = subFieldRow.GetUInt32(tagLookup.IndexOf("HDAT"));
+                verticalDatum = subFieldRow.GetUInt32(tagLookup.IndexOf("VDAT"));
+                soundingDatum = subFieldRow.GetUInt32(tagLookup.IndexOf("SDAT"));
+                compilationScaleOfData = subFieldRow.GetUInt32(tagLookup.IndexOf("CSCL"));
+                unitsOfDepthMeasurement = subFieldRow.GetUInt32(tagLookup.IndexOf("DUNI"));
+                unitsOfHeightMeasurement = subFieldRow.GetUInt32(tagLookup.IndexOf("HUNI"));
+                unitsOfPositionalAccuracy = subFieldRow.GetUInt32(tagLookup.IndexOf("PUNI"));
+                coordinateUnits = (CoordinateUnits)subFieldRow.GetUInt32(tagLookup.IndexOf("COUN"));
+                coordinateMultiplicationFactor = subFieldRow.GetUInt32(tagLookup.IndexOf("COMF"));
+                soundingMultiplicationFactor = subFieldRow.GetUInt32(tagLookup.IndexOf("SOMF"));
                 // COMT
             }
         }

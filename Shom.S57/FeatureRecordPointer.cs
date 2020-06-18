@@ -9,7 +9,6 @@ namespace S57
         public FeatureObjectPointer(SubFields ffpt)
         {
             this.TagIndex = ffpt.TagIndex;
-            this.Tags = ffpt.Tags;
             this.Values = ffpt.Values;
             FeatureList = new List<Feature>(); //consider intializing with 2 for speadup
         }

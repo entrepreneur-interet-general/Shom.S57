@@ -2,9 +2,21 @@
 
 namespace S57
 {
+    public struct MyS57AttComparer : IEqualityComparer<S57Att>
+    {
+        public bool Equals(S57Att x, S57Att y)
+        {
+            return x == y;
+        }
+
+        public int GetHashCode(S57Att obj)
+        {
+            return (int)obj;
+        }
+    }
     public static class S57AttributeInfo
     {
-        public static Dictionary<S57Att, string> S57Dict = new Dictionary<S57Att, string>()
+        public static Dictionary<S57Att, string> S57Dict = new Dictionary<S57Att, string>(new MyS57AttComparer())
         {
             //source: http://www.s-57.com/
             //retrieved on January 25, 2019

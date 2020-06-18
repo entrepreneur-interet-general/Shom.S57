@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using S57;
 using Shom.ISO8211;
+using System.Diagnostics;
 
 namespace Shom.S57.Tests
 {
@@ -14,72 +15,65 @@ namespace Shom.S57.Tests
         //static void Main(string[] args)
         static void Main()
         {
-            var reader = new S57Reader();
+            S57Reader reader;
             string ZipName = "NC_ENCs.zip";
-            string rootPath = "D:/Familie/Documents/Programming/test";
-            string zipPath = Path.Combine(rootPath, ZipName);
-            ZipArchive archive = ZipFile.OpenRead(zipPath);
-            //reader.ReadCatalogue(S57map);
-            //string MapName = "CATALOG.031";
-            //reader.ReadArchiveCatalogue(archive, MapName);
+            string zipRootPath = "D:/Familie/Documents/Programming/test";
+            string zipPath = Path.Combine(zipRootPath, ZipName);
+            string VolumeRootPath = "D:/Familie/Documents/Programming/test/ENC_ROOT";
+            string MapName = "US5NC51M.000"; //US5NC12M.000  US5NC51M.000
+            Stopwatch timer = new Stopwatch();
 
-            //string MapName = "US5NC12M.000";
-            string MapName = "US5NC18M.000";
-            //string MapName = "US5NC51M.000";
-            reader.ReadFromArchive(archive, MapName, true);
+            //timer.Start();
+            //var reader = new S57Reader();
+            //reader.ReadCatalogue(VolumeRootPath);
+            //foreach (var map in reader.BaseFiles)
+            //{
+            //    string name = map.Value.fileName;
+            //    string _MapName = name.Substring(name.IndexOf("\\") + 1);
+            //    reader.Read(VolumeRootPath, MapName, false);
+            //    Console.WriteLine(_MapName);
+            //    var bla = reader.GetFeaturesOfClass(S57Obj.M_COVR);
+            //};
+            //timer.Stop();
+            //Console.WriteLine(((double)(timer.Elapsed.TotalMilliseconds)).ToString("0.00 ms"));
+
+
+            ZipArchive archive = ZipFile.OpenRead(zipPath);
+            timer.Reset();
+            timer.Start();
+            reader = new S57Reader();
+            reader.ReadCatalogue(archive);
+            foreach (var map in reader.BaseFiles)
+            {
+                string name = map.Value.fileName;
+                string _MapName = name.Substring(name.IndexOf("\\") + 1);
+                reader.Read(archive, _MapName, false);
+                Console.WriteLine(_MapName);
+                var bla = reader.GetFeaturesOfClass(S57Obj.DEPARE);
+            };
+            //reader.Read(archive, MapName, true);
             archive.Dispose();
+            timer.Stop();
+            Console.WriteLine(((double)(timer.Elapsed.TotalMilliseconds)).ToString("0.00 ms"));
+
             //ListRelationships(reader, S57Obj.BOYSAW);
             //ListFeatures(reader);
             //QalityOfPosition(reader);
 
-            //reader.Read(new FileStream(path, FileMode.Open));
-
-            FlatPolygon TempSet;
-            var features = reader.GetFeaturesOfClass(S57Obj.DEPARE);
-            for (int i = 0; i < features.Count; i++)
-            {
-                //if (features[i].namekey.RecordIdentificationNumber == 6163)
-                //{
-                if (features[i].Primitive == GeometricPrimitive.Area)
-                {
-                    TempSet = features[i].GetGeometry(true) as FlatPolygon;
-                }
-                //}
-            }
-            //var test1 = features.First(x => x.RecordName == 6140u);
-            //var test2 = features.First(x => x.RecordName == 6140u).GetGeometry() as PolygonSet;
-            //var test1 = features.First(x => x.RecordName == 6156u);
-            //var test2 = features.First(x => x.RecordName == 6156u).GetGeometry() as PolygonSet;
-            //var test1 = features.First(x => x.RecordName == 6134u);
-            //var test2 = features.First(x => x.RecordName == 6134u).GetGeometry() as PolygonSet;
-            //var test1 = features.First(x => x.RecordName == 6155u);
-            //var test2 = features.First(x => x.RecordName == 6155u).GetGeometry() as Area;
-            //var features = reader.GetFeaturesOfClass(S57Objects.SOUNDG);
+            //FlatPolygon TempSet;
+            //var features = reader.GetFeaturesOfClass(S57Obj.DEPARE);
             //for (int i = 0; i < features.Count; i++)
             //{
-            //    if (features[i].Primitive == GeometricPrimitive.Point)
+            //    if (features[i].Primitive == GeometricPrimitive.Area)
             //    {
-            //        var TempSet = features[i].ExtractSoundings();
-            //        var TempSet2 = features[i].VectorPtrs[0].Vector.SoundingList;
+            //        TempSet = features[i].GetGeometry(true) as FlatPolygon;
             //    }
-            //    else
-            //    {
-            //        continue;
-            //    }
-            //}
-
-            //var features = reader.GetFeaturesOfClass(S57Objects.DEPCNT);
-            //var test1 = features.First(x => x.RecordName == 6345u);
-            //var test2 = features.First(x => x.RecordName == 6345u).GetGeometry() as Line;
-            //foreach (var xyz in test2.Areas)
+            //}        
+            //var features = reader.GetFeaturesOfClass(S57Obj.LNDMRK);
+            //for (int i = 0; i < features.Count; i++) 
             //{
-            //foreach (var xy in xyz.points)
-            //foreach (var xy in test2.points)
-            //{
-            //    var a = xy.X;
-            //    var b = xy.Y;
-            //    Console.WriteLine($"{a:0.0######}" + " , " + $"{b:0.0######}");
-            //}
+            //    string tempString;
+            //    features[i].Attributes.TryGetValue(S57Att.SCAMIN, out tempString);
             //}
             Console.ReadKey();
 
@@ -127,7 +121,18 @@ namespace Shom.S57.Tests
                 string test = obj.Key.ToString();
                 if (a > 0)
                 {
-                    Console.WriteLine(test + ": " + "{0:G}", a.ToString());
+                    var features = reader.GetFeaturesOfClass(obj.Key);
+                    int count=0;
+                    for (int i = 0; i < features.Count; i++)
+                    {
+                        if(features[i].Attributes!=null && features[i].Attributes.ContainsKey(S57Att.SCAMIN))
+                            count++;
+                    }
+                    string tempString=null;
+                    if (features[0].Attributes != null)
+                        features[0].Attributes.TryGetValue(S57Att.SCAMIN, out tempString);
+                    Console.WriteLine(test + ": " + count + "/" +a + " "+ tempString);
+                    //Console.WriteLine(test + ": " + "{0:G}", a.ToString());
                 }
             }
         }

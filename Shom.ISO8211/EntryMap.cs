@@ -13,11 +13,11 @@ namespace Shom.ISO8211
 
         public EntryMap(ArraySegment<byte> bytessegment)
         {
-            var bytes = (IList<byte>)bytessegment;
-            _sizeOfLengthField = ByteToCharToInt(bytes[0]);
-            _sizeOfPositionField = ByteToCharToInt(bytes[1]);
-            var reserved = (char) bytes[2];
-            _sizeOfTagField = ByteToCharToInt(bytes[3]);
+            int _offset = bytessegment.Offset;
+            _sizeOfLengthField = ByteToCharToInt(bytessegment.Array[_offset+20]);
+            _sizeOfPositionField = ByteToCharToInt(bytessegment.Array[_offset + 21]);
+            var reserved = (char)bytessegment.Array[_offset + 22];
+            _sizeOfTagField = ByteToCharToInt(bytessegment.Array[_offset + 23]);
         }
 
         public int SizeOfLengthField

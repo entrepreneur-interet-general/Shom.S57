@@ -10,9 +10,8 @@ namespace S57
         public VectorRecordPointer(SubFields vrpt)
         {
             this.TagIndex = vrpt.TagIndex;
-            this.Tags = vrpt.Tags;
             this.Values = vrpt.Values;
-            VectorList = new List<Vector>(); //consider intializing with 2 for speadup
+            VectorList = new List<Vector>(); 
         }
     }
 }

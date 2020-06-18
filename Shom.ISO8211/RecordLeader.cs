@@ -16,38 +16,39 @@ namespace Shom.ISO8211
         public int RecordLength;
         public char VersionNumber;
 
-        public RecordLeader(byte[] bytes)
+        public RecordLeader(ArraySegment<byte> bytes)
         {
+            int _offset = bytes.Offset;
             for (int i = 0; i < 5; i++)
             {
-                RecordLength += ((bytes[i] - '0') * (int)Math.Pow(10, 4 - i));
+                RecordLength += ((bytes.Array[bytes.Offset + i] - '0') * (int)Math.Pow(10, 4 - i));
             }
 
-            InterchangeLevel = (char) bytes[5];
-            LeaderIdentifier = (char) bytes[6];
+            InterchangeLevel = (char) bytes.Array[_offset + 5];
+            LeaderIdentifier = (char) bytes.Array[_offset + 6];
             if (LeaderIdentifier == 'L' && InterchangeLevel != '3')
             {
                 throw new NotImplementedException("Processing file with Interchange level " + InterchangeLevel);
             }
 
-            InlineCodeExtensionIndicator = (char) bytes[7];
+            InlineCodeExtensionIndicator = (char) bytes.Array[_offset + 7];
             if (LeaderIdentifier == 'L' && InlineCodeExtensionIndicator != 'E')
             {
                 throw new NotImplementedException("Processing file with InlineCodeExtensionIndicator " + InlineCodeExtensionIndicator);
             }
-            VersionNumber = (char) bytes[8];
-            ApplicationIndicator = (char) bytes[9];
+            VersionNumber = (char) bytes.Array[_offset + 8];
+            ApplicationIndicator = (char) bytes.Array[_offset + 9];
             if (LeaderIdentifier == 'L')
             {
-                FieldControlLength = (bytes[10] - '0') * 10 + (bytes[11] - '0');
+                FieldControlLength = (bytes.Array[_offset + 10] - '0') * 10 + (bytes.Array[_offset + 11] - '0');
             }
 
             for (int i = 12; i < 17; i++)
             {
-                BaseAddressOfFieldArea += ((bytes[i] - '0') * (int)Math.Pow(10, 16 - i));
+                BaseAddressOfFieldArea += ((bytes.Array[_offset + i] - '0') * (int)Math.Pow(10, 16 - i));
             }
 
-            ExtendedCharacterSetIndicator = new[] {(char) bytes[17], (char) bytes[18], (char) bytes[19], '\0'}; //added \0
+            ExtendedCharacterSetIndicator = new[] {(char) bytes.Array[_offset + 17], (char) bytes.Array[_offset + 18], (char) bytes.Array[_offset + 19], '\0'}; //added \0
 
             //var entryMapBytes = new byte[4];
             //Array.Copy(bytes, 20, entryMapBytes, 0, 4);
@@ -55,8 +56,7 @@ namespace Shom.ISO8211
             //var entryMap = new EntryMap(entryMapBytes);
             //EntryMap = entryMap;
 
-            ArraySegment<byte> entryMapBytes = new ArraySegment<byte>(bytes, 20, 4);
-            EntryMap = new EntryMap(entryMapBytes);
+            EntryMap = new EntryMap(bytes);
 
 
         }
