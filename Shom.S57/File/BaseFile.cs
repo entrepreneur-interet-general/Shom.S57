@@ -276,6 +276,8 @@ namespace S57.File
                     point.X = subFieldRow.GetDouble(xcoo) / coordinateMultiplicationFactor;
                     point.depth = subFieldRow.GetDouble(ve3d) / soundingMultiplicationFactor;
                     eVec.Value.SoundingList.Add(point);
+		    // to print in file or in console the soundings point information, you should uncomment the next line.
+		    //string l = point.X +", "+ point.Y + ", "+ point.depth;
                 }
             }
         }
