@@ -21,6 +21,7 @@ One important attribute for vectors is the positional accuracy (given as the POS
 #### Features
 Features carry all the data regarding objects on the map.
 Each type of feature has its own list of attributes.
+to get the list of attributes for an given feature you can see [s-57 layer site](http://www.s-57.com/)
 
 This library does not manage chart update files. 
 Base S57 map files use a .000 extension.
